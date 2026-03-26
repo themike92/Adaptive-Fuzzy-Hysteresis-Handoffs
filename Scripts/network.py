@@ -19,7 +19,7 @@ class Network:
     
     #build the base station objects of the network
     #returns a list of the BSs
-    def generate_base_stations(self, center_x=500, center_y=500, cell_radius=300, rings=1):
+    def generate_base_stations(self, center_x=500, center_y=500, cell_radius=170, rings=1):
         
         centers = self.generate_hex_centers(center_x, center_y, cell_radius, rings)
         self.base_stations = []
@@ -60,12 +60,20 @@ class Network:
     def generate_hex_centers(self, center_x, center_y, cell_radius, rings=1):
         centers = [(center_x, center_y)]  # center of the BSs
         
-        if rings == 1:
-            for i in range(6):
-                angle = math.radians(60 * i)  # 6 directions, 60 degrees apart
-                x = center_x + cell_radius * math.cos(angle)
-                y = center_y + cell_radius * math.sin(angle)
-                centers.append((x, y))   
+        if rings >= 1:
+            horiz = math.sqrt(3) * cell_radius
+
+            directions = [
+                (0,          cell_radius * 2.0),
+                (horiz,      cell_radius * 1.0),
+                (horiz,     -cell_radius * 1.0),
+                (0,         -cell_radius * 2.0),
+                (-horiz,    -cell_radius * 1.0),
+                (-horiz,     cell_radius * 1.0),
+            ]
+            
+            for dx, dy in directions:
+                centers.append((center_x + dx, center_y + dy))
         
         return centers
         
