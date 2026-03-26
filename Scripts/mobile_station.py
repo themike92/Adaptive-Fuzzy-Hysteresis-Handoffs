@@ -13,5 +13,6 @@ class MobileStation:
         self.id = id
         self.x = random.randint(0, 1000)
         self.y = random.randint(0, 1000)
-        
         self.speed = random.choice(SPEEDS)
+        #current BS
+        self.connected_bs = None
