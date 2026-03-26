@@ -1,4 +1,9 @@
 #Simulation file, uses simpy to run our simulation
+
+
+#This is where all handoff logic (baseline, adaptive, and fuzzy) will be determined and applies
+
+
 import simpy
 
 env = simpy.Environment()  # the simulation clock/world
