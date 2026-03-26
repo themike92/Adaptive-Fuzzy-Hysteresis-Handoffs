@@ -9,13 +9,14 @@ VERY_FAST = 100
 SPEEDS = [STATIONARY, SLOW, FAST, VERY_FAST]
 
 class MobileStation:
-    def __init__(self, id):
+    def __init__(self, id, bounds=(0, 1000, 0, 1000)):
         #identifier for the mobile station
         self.id = id
+        self.bounds = bounds
         
         #initial random position and speed
-        self.x = random.randint(0, 1000)
-        self.y = random.randint(0, 1000)
+        self.x = random.randint(bounds[0], bounds[1])
+        self.y = random.randint(bounds[2], bounds[3])
         self.speed = random.choice(SPEEDS)
         
         #current BS, gets updated in sim.py when handoff logic is applied
@@ -42,8 +43,8 @@ class MobileStation:
             self.y += random.randint(-10, 10)
         
         #Keep the mobile station within the bounds of the area
-        self.x = max(0, min(1000, self.x))
-        self.y = max(0, min(1000, self.y))
+        self.x = max(self.bounds[0], min(self.bounds[1], self.x))
+        self.y = max(self.bounds[2], min(self.bounds[3], self.y))
         
         #MAY WANT TO ADD A DIRECTION COMPONENT TO MOVEMENT TO SIMULATE MORE REALISTIC MOVEMENT PATTERNS, BUT THIS IS GOOD ENOUGH FOR NOW
         #WE CAN ALSO CHANGE HOW THE MS MOVES IN GENERAL IF THERE IS A BETTER WAY

@@ -125,8 +125,8 @@ class BaseStation:
         )
         return ffds
     
-    
-    
+    def get_load(self):
+        return (len(self.active_calls) / self.max_capacity) * 100
     
     
     #helper function that acts as print(bs) to show all the info regarding this BS (special modifiable python function)

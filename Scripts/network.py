@@ -21,7 +21,7 @@ class Network:
     #returns a list of the BSs
     def generate_base_stations(self, center_x=500, center_y=500, cell_radius=300, rings=1):
         
-        centers = self.generate_hex_grid(center_x, center_y, cell_radius, rings)
+        centers = self.generate_hex_centers(center_x, center_y, cell_radius, rings)
         self.base_stations = []
  
         #Go through the list of centers are creat a BS object for each one
