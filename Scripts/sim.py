@@ -5,6 +5,7 @@ import simpy
 from network import Network
 from base_station import BaseStation
 from mobile_station import MobileStation
+from visual import Visualizer
 
 #Hysteresis constants. All H values are in dBm
 H_FIXED = 5             # fixed margin used by the baseline algorithm
@@ -16,17 +17,22 @@ K       = 0.06          # sensitivity constant, controls how much speed affects 
 # Drop threshold, in dBm
 RSS_DROP_THRESHOLD = -95    
 
-env = simpy.Environment()  # the simulation clock/world
-
-def ms_process(env):
+def ms_process(env, ms, network, algorithm):
     while True:
-        # move MS, check signal, trigger handoff if needed
-        yield env.timeout(1)  # wait 1 time unit then repeat
-
-env.process(ms_process(env))
-env.run(until=100)  # run for 100 time units
-
-
+        ms.move()
+        
+        dropped = check_call_drop(ms, env.now, results=None)
+        
+        if not dropped:
+            if algorithm == "baseline":
+                target = baseline_handoff_decision(ms, network)
+            elif algorithm == "adaptive":
+                target = adaptive_hysteresis_handoff_decision(ms, network)
+            
+            if target:
+                perform_handoff(ms, target, env.now, results=None)
+        
+        yield env.timeout(1)
 
 
 #ALGORITHM 1, BASELINE
@@ -165,3 +171,44 @@ def check_call_drop(ms, curr_time, results):
     return False
     
 
+def run_simulation(algorithm="baseline", num_ms=10, duration=50):
+    env = simpy.Environment()
+    
+    network = Network()
+    network.generate_base_stations()
+    network.generate_mobile_stations(num_ms)
+    network.initial_connections()
+    
+    network.print_summary()
+    
+    for ms in network.mobile_stations:
+        env.process(ms_process(env, ms, network, algorithm))
+    
+    env.run(until=duration)
+    
+    print("\nSimulation complete.")
+    print(f"Algorithm : {algorithm}")
+    print(f"Duration  : {duration} time steps")
+    print(f"MSs ran   : {num_ms}")
+
+
+def run_visual_simulation(algorithm="baseline", num_ms=10):
+    env = simpy.Environment()
+    
+    network = Network()
+    network.generate_base_stations()
+    network.generate_mobile_stations(num_ms)
+    network.initial_connections()
+    
+    network.print_summary()
+    
+    # register all MS processes
+    for ms in network.mobile_stations:
+        env.process(ms_process(env, ms, network, algorithm))
+    
+    viz = Visualizer(network, cell_radius=300)
+    
+    def sim_step():
+        env.step()  # advance simpy one event at a time
+    
+    viz.start(sim_step, interval=100)
