@@ -18,14 +18,17 @@ FFDS_WEIGHTS = {"rss": 0.4, "snr": 0.35, "load": 0.25}
 #invert = True for load since lower load is better, False for RSS and SNR where higher is better
 def fuzzy_score(value, low_thresh, high_thresh, invert=False):
     if value <= low_thresh:
-        raw = 0.0   # low
+        score = 0.0   # low
     elif value >= high_thresh:
-        raw = 1.0   # high
+        score = 1.0   # high
     else:
-        raw = 0.5   # medium
+        score = 0.5   # medium
  
     # For load, a lower percentage is better, so we flip the score
-    return (1.0 - raw) if invert else raw
+    if invert == True:
+        return 1.0 - score
+    else:
+        return score
 
 
 class BaseStation:
@@ -55,6 +58,8 @@ class BaseStation:
             self.active_calls.append(ms)
             return True
         return False
+    
+    
 
     #remove an MS from the list of active calls when it disconnects or hands off to another BS
     def remove_call(self, ms):
@@ -63,16 +68,21 @@ class BaseStation:
             return True
         return False
     
+    
+    
     #Return current occupancy as a percentage (0–100).
     def get_cell_load(self):
         return (len(self.active_calls) / self.max_capacity) * 100
+
 
     #Euclidean distance between the BS and a given MS
     def calculate_distance(self, ms):
         return math.sqrt((self.x - ms.x)**2 + (self.y - ms.y)**2)
 
+
+
     #Calculate the RSS at the MSs location
-    #This is done with a simple path loss model
+    #This is done with a path loss model
     def calculate_rss(self, ms):
         distance = self.calculate_distance(ms)
         
@@ -86,6 +96,8 @@ class BaseStation:
         rss = self.power - path_loss - congestion_penalty + noise
         return rss
     
+    
+    
     #Calculcate the SNR at the MSs location
     #This is where the noise floor is used
     def calculate_snr(self, ms):
@@ -93,9 +105,9 @@ class BaseStation:
         return self.calculate_rss(ms) - self.noise_floor
     
     
+    
     #Calculate the Full Fuzzy Decision Score for this BS
-    #FFDS = w_rss  * score(RSS) + w_snr  * score(SNR) + w_load * score(Load)
-    #Returns a value in [0, 1]; higher is better.
+    #Returns a value in [0, 1]. higher is better. Load score is inverted since for that lower is better
     def calculate_ffds(self, ms):
        
         rss  = self.calculate_rss(ms)
@@ -112,6 +124,10 @@ class BaseStation:
             FFDS_WEIGHTS["load"] * load_score
         )
         return ffds
+    
+    
+    
+    
     
     #helper function that acts as print(bs) to show all the info regarding this BS (special modifiable python function)
     def __repr__(self):

@@ -46,6 +46,7 @@ class MobileStation:
         self.y = max(0, min(1000, self.y))
         
         #MAY WANT TO ADD A DIRECTION COMPONENT TO MOVEMENT TO SIMULATE MORE REALISTIC MOVEMENT PATTERNS, BUT THIS IS GOOD ENOUGH FOR NOW
+        #WE CAN ALSO CHANGE HOW THE MS MOVES IN GENERAL IF THERE IS A BETTER WAY
     
     #return what speed the MS is going as a string
     def get_speed_category(self):
