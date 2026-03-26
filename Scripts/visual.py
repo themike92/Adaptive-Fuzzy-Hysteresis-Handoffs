@@ -16,6 +16,13 @@ class Visualizer:
         self.ax.set_facecolor('#1a1a2e')
         self.fig.patch.set_facecolor('#1a1a2e')
         
+        # fix axis tick and label colors
+        self.ax.tick_params(colors='white')
+        self.ax.xaxis.label.set_color('white')
+        self.ax.yaxis.label.set_color('white')
+        for spine in self.ax.spines.values():
+            spine.set_edgecolor('#4a9eff')
+        
         self.bs_scatter  = None
         self.ms_scatter  = None
         self.connections = []
@@ -27,7 +34,7 @@ class Visualizer:
     def _hex_corners(self, cx, cy):
         corners = []
         for i in range(6):
-            angle = math.radians(60 * i + 30)
+            angle = math.radians(60 * i)  # flat-top orientation
             x = cx + self.cell_radius * math.cos(angle)
             y = cy + self.cell_radius * math.sin(angle)
             corners.append((x, y))
@@ -87,6 +94,19 @@ class Visualizer:
         ms_y = [ms.y for ms in self.network.mobile_stations]
         self.ms_scatter.set_offsets(list(zip(ms_x, ms_y)))
         
+
+         # update MS colors based on state
+        colors = []
+        for ms in self.network.mobile_stations:
+            if ms.call_dropped or ms.connected_bs is None:
+                colors.append('#888888')   # grey - dropped
+            elif ms.handoff_flash > 0:
+                colors.append('#bf5fff')   # purple - just handed off
+                ms.handoff_flash -= 1
+            else:
+                colors.append('#ff6b6b')   # red - connected
+        self.ms_scatter.set_color(colors)
+
         # clear old connection lines
         for line in self.connections:
             line.remove()

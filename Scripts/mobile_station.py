@@ -3,9 +3,9 @@ import random
 
 #Different speed categories for MSs
 STATIONARY = 0
-SLOW = 25
-FAST = 50
-VERY_FAST = 100
+SLOW = 75
+FAST = 100
+VERY_FAST = 200
 SPEEDS = [STATIONARY, SLOW, FAST, VERY_FAST]
 
 class MobileStation:
@@ -13,7 +13,7 @@ class MobileStation:
         #identifier for the mobile station
         self.id = id
         self.bounds = bounds
-        
+
         #initial random position and speed
         self.x = random.randint(bounds[0], bounds[1])
         self.y = random.randint(bounds[2], bounds[3])
@@ -27,6 +27,9 @@ class MobileStation:
         
         #determine if the current MS has experienced a call drop 
         self.call_dropped  = False
+
+        # countdown timer for purple flash
+        self.handoff_flash = 0
         
     def move(self):
         #Move the mobile station based on its speed
@@ -66,5 +69,5 @@ class MobileStation:
         return (
             f"MobileStation(id={self.id}, pos=({self.x:.0f},{self.y:.0f}), "
             f"speed={self.speed} [{self.get_speed_category()}], "
-            f"bs={bs_id}, handoffs={self.handoff_count})"
+            f"bs={bs_id}, handoffs={self.handoff_count}, flash={self.handoff_flash})"
         )    
