@@ -64,14 +64,14 @@ class Network:
             horiz = math.sqrt(3) * cell_radius
 
             directions = [
-                (0,          cell_radius * 2.0),
-                (horiz,      cell_radius * 1.0),
-                (horiz,     -cell_radius * 1.0),
-                (0,         -cell_radius * 2.0),
-                (-horiz,    -cell_radius * 1.0),
-                (-horiz,     cell_radius * 1.0),
+                (0,       cell_radius * 2),
+                (horiz,   cell_radius),
+                (horiz,  -cell_radius),
+                (0,      -cell_radius * 2),
+                (-horiz, -cell_radius),
+                (-horiz,  cell_radius),
             ]
-            
+                        
             for dx, dy in directions:
                 centers.append((center_x + dx, center_y + dy))
         

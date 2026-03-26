@@ -4,15 +4,16 @@ import matplotlib.patches as patches
 import math
 
 class Visualizer:
-    def __init__(self, network, cell_radius=300):
+    def __init__(self, network, cell_radius, signal_radius):
         self.network = network
         self.cell_radius = cell_radius
+        self.signal_radius = signal_radius
         
         self.fig, self.ax = plt.subplots(figsize=(10, 10))
         self.ax.set_xlim(network.bounds[0], network.bounds[1])
         self.ax.set_ylim(network.bounds[2], network.bounds[3])
         self.ax.set_aspect('equal')
-        self.ax.set_title("Handoff Simulation")
+        self.ax.set_title("Handoff Simulation", color='white', fontsize=14)
         self.ax.set_facecolor('#1a1a2e')
         self.fig.patch.set_facecolor('#1a1a2e')
         
@@ -53,6 +54,17 @@ class Visualizer:
                 alpha=0.5
             )
             self.ax.add_patch(hex_patch)
+
+            # signal range circle
+            range_circle = patches.Circle(
+                (bs.x, bs.y),
+                radius=self.signal_radius,
+                fill=True,
+                facecolor="#20456e",
+                edgecolor='none',
+                alpha=0.05  # very faint
+            )
+            self.ax.add_patch(range_circle)
     
     def _init_stations(self):
         # draw BS markers
