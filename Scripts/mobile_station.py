@@ -1,12 +1,16 @@
 #This will be the code for our mobile stations
 import random
+import math
 
 #Different speed categories for MSs
 STATIONARY = 0
-SLOW = 75
-FAST = 100
-VERY_FAST = 200
+SLOW = 30
+FAST = 60
+VERY_FAST = 100
 SPEEDS = [STATIONARY, SLOW, FAST, VERY_FAST]
+
+# time steps before changing direction
+DIRECTION_CHANGE_INTERVAL = 25  
 
 class MobileStation:
     def __init__(self, id, bounds=(0, 1000, 0, 1000)):
@@ -18,6 +22,12 @@ class MobileStation:
         self.x = random.randint(bounds[0], bounds[1])
         self.y = random.randint(bounds[2], bounds[3])
         self.speed = random.choice(SPEEDS)
+        
+        
+        #determine the direction of the MS (radians)
+        self.direction = random.uniform(0, 2 * math.pi)  
+        # Internal timer for direction changes
+        self._steps_since_direction_change = 0
         
         #current BS, gets updated in sim.py when handoff logic is applied
         self.connected_bs = None
@@ -31,26 +41,55 @@ class MobileStation:
         # countdown timer for purple flash
         self.handoff_flash = 0
         
-    def move(self):
-        #Move the mobile station based on its speed
+        self.prev_x = self.x    # position at start of last sim step
+        self.prev_y = self.y    # position at start of last sim step
+        self.next_x = self.x    # position at end of last sim step  
+        self.next_y = self.y    # position at end of last sim step
+        
+    #advance MS by a certain amount each time step, in the same direction for a while
+    def move(self, dt=1):
+        #use the current speed and direction to update position
+        #make them bounce off the walls if they hit the boundary
+        
         if self.speed == STATIONARY:
             return
-        elif self.speed == SLOW:
-            self.x += random.randint(-1, 1)
-            self.y += random.randint(-1, 1)
-        elif self.speed == FAST:
-            self.x += random.randint(-5, 5)
-            self.y += random.randint(-5, 5)
-        elif self.speed == VERY_FAST:
-            self.x += random.randint(-10, 10)
-            self.y += random.randint(-10, 10)
-        
-        #Keep the mobile station within the bounds of the area
-        self.x = max(self.bounds[0], min(self.bounds[1], self.x))
-        self.y = max(self.bounds[2], min(self.bounds[3], self.y))
-        
-        #MAY WANT TO ADD A DIRECTION COMPONENT TO MOVEMENT TO SIMULATE MORE REALISTIC MOVEMENT PATTERNS, BUT THIS IS GOOD ENOUGH FOR NOW
-        #WE CAN ALSO CHANGE HOW THE MS MOVES IN GENERAL IF THERE IS A BETTER WAY
+
+        # Save where we were before moving
+        self.prev_x = self.x
+        self.prev_y = self.y
+
+        dx = self.speed * math.cos(self.direction) * dt
+        dy = self.speed * math.sin(self.direction) * dt
+
+        new_x = self.x + dx
+        new_y = self.y + dy
+
+        x_min, x_max, y_min, y_max = self.bounds
+
+        #bounce off the walls when hit
+        if new_x < x_min or new_x > x_max:
+            self.direction = math.pi - self.direction
+            new_x = max(x_min, min(new_x, x_max))
+
+        if new_y < y_min or new_y > y_max:
+            self.direction = -self.direction
+            new_y = max(y_min, min(new_y, y_max))
+
+        self.x = new_x
+        self.y = new_y
+
+        # Save where we ended up
+        self.next_x = self.x
+        self.next_y = self.y
+
+        self._steps_since_direction_change += 1
+        if self._steps_since_direction_change >= DIRECTION_CHANGE_INTERVAL:
+            self.change_direction()
+ 
+    #choose a new random direction and reset the step counter
+    def change_direction(self):
+        self.direction = random.uniform(0, 2 * math.pi)
+        self._steps_since_direction_change = 0
     
     #return what speed the MS is going as a string
     def get_speed_category(self):
