@@ -5,9 +5,9 @@ from sim import run_simulation, run_visual_simulation
 def display_menu():
     print("\n=== Handoff Algorithm Simulator ===")
     print("1. Run All Algorithms (with comparison graphs)")
-    print("2. Run RSS Threshold Algorithm")
-    print("3. Run Hysteresis Algorithm")
-    print("4. Run Adaptive Fuzzy Algorithm")
+    print("2. Run Baseline RSS Threshold Algorithm")
+    print("3. Run Adaptive Hysteresis Algorithm")
+    print("4. Run Adaptive-Fuzzy Algorithm")
     print("5. Exit")
 
 def get_user_choice():

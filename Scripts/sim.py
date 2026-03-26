@@ -137,7 +137,7 @@ def perform_handoff(ms, target_bs, time, results):
     if target_bs.add_call(ms):
         ms.connected_bs = target_bs
         ms.handoff_count += 1
-        ms.handoff_flash = 2
+        ms.handoff_flash = 5
         
         #This is just what logging could look like when we get there (placeholder for now)
         #results.record_handoff(time, ms, old_BS, target_bs)
@@ -207,7 +207,7 @@ def run_visual_simulation(algorithm="baseline", num_ms=10):
     for ms in network.mobile_stations:
         env.process(ms_process(env, ms, network, algorithm))
     
-    viz = Visualizer(network, cell_radius=170)
+    viz = Visualizer(network, cell_radius=170, signal_radius=250)
     
     def sim_step():
         env.step()  # advance simpy one event at a time
