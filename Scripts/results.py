@@ -64,9 +64,9 @@ class Results:
         
         # per MS breakdown
         print(f"\n  Per MS Breakdown")
-        print(f"  {'-'*40}")
-        print(f"  {'MS':<6} {'Handoffs':<12} {'Dropped':<10} {'Avg RSS':<12} {'Quality'}")
-        print(f"  {'-'*40}")
+        print(f"  {'-'*50}")
+        print(f"  {'MS':<22} {'Handoffs':<12} {'Dropped':<10} {'Avg RSS':<12} {'Quality'}")
+        print(f"  {'-'*50}")
         
         for ms in mobile_stations:
             ms_handoffs = [h for h in self.handoffs if h[1] == ms.id]
@@ -85,6 +85,7 @@ class Results:
                 q = "Poor"
             
             dropped = "Yes" if ms.call_dropped else "No"
-            print(f"  MS{ms.id:<4} {len(ms_handoffs):<12} {dropped:<10} {avg:<12.2f} {q}")
+            speed = ms.get_speed_category()
+            print(f"  MS-{ms.id:<4} ({speed}){'':<{12-len(speed)}} {len(ms_handoffs):<12} {dropped:<10} {avg:<12.2f} {q}")
         
         print(f"\n{'='*55}\n")
