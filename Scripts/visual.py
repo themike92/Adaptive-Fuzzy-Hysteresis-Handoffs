@@ -160,10 +160,19 @@ class Visualizer:
         
         return [self.ms_scatter] + self.connections
     
-    def start(self, sim_step_fn, interval=100):
+    def start(self, sim_step_fn, interval=100, duration=100):
+        self.frame_count = 0
+        self.duration = duration
+        
         def animate(frame):
-            sim_step_fn()         # advance simulation one step
-            return self.update(frame)  # redraw
+            if self.frame_count >= self.duration:
+                self.ani.event_source.stop()  # stop animation
+                plt.close()                   # close window
+                return [self.ms_scatter]
+            
+            sim_step_fn()
+            self.frame_count += 1
+            return self.update(frame)
         
         self.ani = animation.FuncAnimation(
             self.fig, animate,
