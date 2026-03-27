@@ -37,6 +37,7 @@ class Network:
                 noise        = random.uniform(1, 3),
                 congestion   = random.uniform(0.3, 0.7),
                 max_capacity = MAX_CAPACITY,
+                coverage_radius = 280
             )
             self.base_stations.append(bs)
  
@@ -87,6 +88,11 @@ class Network:
         best_rss = float('-inf')  # start at negative infinity so any real RSS beats it
 
         for bs in self.base_stations:
+            distance = math.sqrt((bs.x - ms.x)**2 + (bs.y - ms.y)**2)
+            
+            if distance > bs.coverage_radius:
+                continue  # MS is outside this BS's range, skip it
+                
             rss = bs.calculate_rss(ms)
             if rss > best_rss:
                 best_rss = rss
@@ -117,11 +123,12 @@ class Network:
                 ms.connected_bs = best_bs
             else:
                 #BS is full, gotta try the next one
-                candidate_BSs = sorted(self.base_stations, key=lambda b: b.calculate_rss(ms), reverse=True)
-                for bs in candidate_BSs:
-                    if bs.add_call(ms):
-                        ms.connected_bs = bs
-                        break
+                candidate_BSs = sorted(
+                    [bs for bs in self.base_stations 
+                    if math.sqrt((bs.x - ms.x)**2 + (bs.y - ms.y)**2) <= bs.coverage_radius],
+                    key=lambda b: b.calculate_rss(ms),
+                    reverse=True
+                )
         #If no BS is avaliable, the MS stays unconnected (nothing changes from their default value)
         
         

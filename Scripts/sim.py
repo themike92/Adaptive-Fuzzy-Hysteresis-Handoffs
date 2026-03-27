@@ -2,6 +2,7 @@
 #This is where all handoff logic (baseline, adaptive, and fuzzy) will be determined and applies
 
 import simpy
+import math
 from network import Network
 from base_station import BaseStation
 from mobile_station import MobileStation
@@ -23,7 +24,14 @@ def ms_process(env, ms, network, algorithm):
         
         dropped = check_call_drop(ms, env.now, results=None)
         
-        if not dropped:
+        if dropped:
+            # try to reconnect if a BS is in range
+            best_bs = network.find_strongest_bs(ms)
+            if best_bs:
+                best_bs.add_call(ms)
+                ms.connected_bs = best_bs
+                ms.call_dropped = False  # reconnected, reset dropped flag
+        else:
             if algorithm == "baseline":
                 target = baseline_handoff_decision(ms, network)
             elif algorithm == "adaptive":
@@ -33,7 +41,6 @@ def ms_process(env, ms, network, algorithm):
                 perform_handoff(ms, target, env.now, results=None)
         
         yield env.timeout(1)
-
 
 #ALGORITHM 1, BASELINE
 #Decide whether to handoff using a fixed hysteresis (H_FIXED) and a basic RSS comparison
@@ -157,6 +164,14 @@ def check_call_drop(ms, curr_time, results):
         ms.call_dropped = True
         return True
     
+    # check if MS has left the BS coverage range
+    distance = ms.connected_bs.calculate_distance(ms)
+    if distance > ms.connected_bs.coverage_radius:
+        ms.connected_bs.remove_call(ms)
+        ms.connected_bs = None
+        ms.call_dropped = True
+        return True
+
     curr_rss = ms.connected_bs.calculate_rss(ms)
     
     if curr_rss < RSS_DROP_THRESHOLD:
@@ -207,7 +222,7 @@ def run_visual_simulation(algorithm="baseline", num_ms=10):
     for ms in network.mobile_stations:
         env.process(ms_process(env, ms, network, algorithm))
     
-    viz = Visualizer(network, cell_radius=170, signal_radius=250)
+    viz = Visualizer(network, cell_radius=170, signal_radius=280)
     
     def sim_step():
         env.step()  # advance simpy one event at a time
