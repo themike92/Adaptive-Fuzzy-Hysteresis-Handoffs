@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.patches as patches
+from matplotlib.lines import Line2D
 import math
 
 class Visualizer:
@@ -73,13 +74,13 @@ class Visualizer:
         self.bs_scatter = self.ax.scatter(
             bs_x, bs_y,
             c='#4a9eff', s=150, zorder=5,
-            marker='^', label='Base Station'
+            marker='^'
         )
         
         # label each BS
         for bs in self.network.base_stations:
             self.ax.text(
-                bs.x, bs.y + 20, f'BS{bs.id}',
+                bs.x, bs.y + 20, f'BS-{bs.id}',
                 color='#4a9eff', fontsize=8,
                 ha='center', zorder=6
             )
@@ -90,10 +91,29 @@ class Visualizer:
         self.ms_scatter = self.ax.scatter(
             ms_x, ms_y,
             c='#ff6b6b', s=60, zorder=5,
-            marker='o', label='Mobile Station'
+            marker='o'
         )
+
+        # MS labels
+        self.ms_labels = []
+        for ms in self.network.mobile_stations:
+            label = self.ax.text(
+                ms.x, ms.y + 15, f'MS-{ms.id}',
+                color='white', fontsize=6,
+                ha='center', zorder=7
+            )
+            self.ms_labels.append(label)
         
+        # legend
+        legend_elements = [
+            Line2D([0], [0], marker='^', color='w', markerfacecolor='#4a9eff', markersize=10, label='Base Station', linestyle='None'),
+            Line2D([0], [0], marker='o', color='w', markerfacecolor='#ff6b6b', markersize=8, label='MS - Connected', linestyle='None'),
+            Line2D([0], [0], marker='o', color='w', markerfacecolor='#bf5fff', markersize=8, label='MS - Handoff', linestyle='None'),
+            Line2D([0], [0], marker='o', color='w', markerfacecolor='#888888', markersize=8, label='MS - Dropped', linestyle='None'),
+        ]
+
         self.ax.legend(
+            handles=legend_elements,
             loc='upper right',
             facecolor='#16213e',
             edgecolor='#4a9eff',
@@ -106,6 +126,9 @@ class Visualizer:
         ms_y = [ms.y for ms in self.network.mobile_stations]
         self.ms_scatter.set_offsets(list(zip(ms_x, ms_y)))
         
+            # update MS labels
+        for i, ms in enumerate(self.network.mobile_stations):
+            self.ms_labels[i].set_position((ms.x, ms.y + 15))
 
          # update MS colors based on state
         colors = []

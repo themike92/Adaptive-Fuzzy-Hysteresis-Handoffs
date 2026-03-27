@@ -32,7 +32,7 @@ def fuzzy_score(value, low_thresh, high_thresh, invert=False):
 
 
 class BaseStation:
-    def __init__(self, id, x, y, power, noise, congestion, max_capacity):
+    def __init__(self, id, x, y, power, noise, congestion, max_capacity, coverage_radius):
         #unique identifier for the base station
         self.id = id
 
@@ -50,6 +50,8 @@ class BaseStation:
 
         #List of mobile stations currently connected to this base station
         self.active_calls = []
+
+        self.coverage_radius = coverage_radius
 
 
     #add an MS to the list of active calls connected to the BS
