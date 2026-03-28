@@ -5,6 +5,11 @@ Exploring dynamic and signal aware handoffs in a wireless mobile cell network. W
 venv\Scripts\activate
 
 ## Git commands:
+Pulling:
+git pull origin main
+
+
+Adding:
 git status
 
 git add.
