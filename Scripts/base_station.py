@@ -12,6 +12,7 @@ FFDS_WEIGHTS = {"rss": 0.4, "snr": 0.35, "load": 0.25}
 #These thresholds and weights can be adjusted if needed
 
 
+
 #Returns a fuzzy score (0.0 to 1.0) for a given metric value based on defined thresholds
 #Value = the measured metric value (RSS, SNR, load)
 #low/high_thresh = thresholds for categorizing the metric as low, medium, or high
@@ -75,6 +76,33 @@ class BaseStation:
     #Return current occupancy as a percentage (0–100).
     def get_cell_load(self):
         return (len(self.active_calls) / self.max_capacity) * 100
+    
+
+    #check if the BS is overloaded (at or above capacity)
+    def is_overloaded(self):
+        return len(self.active_calls) >= self.max_capacity
+    
+    #when BS is overloaded, drop weakest call
+    def drop_weakest_call(self):
+        if not self.is_overloaded():
+            return None
+        
+        # find the MS with the worst signal on this BS
+        weakest_ms  = None
+        weakest_rss = float('inf')
+        
+        for ms in self.active_calls:
+            rss = self.calculate_rss(ms)
+            if rss < weakest_rss:
+                weakest_rss = rss
+                weakest_ms  = ms
+        
+        if weakest_ms:
+            self.remove_call(weakest_ms)
+            weakest_ms.connected_bs = None
+            weakest_ms.call_dropped = True
+        
+        return weakest_ms
 
 
     #Euclidean distance between the BS and a given MS
@@ -86,12 +114,12 @@ class BaseStation:
     #Calculate the RSS at the MSs location
     #This is done with a path loss model
     def calculate_rss(self, ms):
-        distance = self.calculate_distance(ms)
         
+        distance = self.calculate_distance(ms)
         if distance == 0:
             distance = 0.1
         
-        path_loss = 10 * 2 * math.log10(distance)
+        path_loss = 10 * 3.5 * math.log10(distance)
         noise = random.gauss(0, self.noise)
         congestion_penalty = len(self.active_calls) * self.congestion
         

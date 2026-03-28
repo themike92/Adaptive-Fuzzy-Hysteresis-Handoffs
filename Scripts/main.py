@@ -29,9 +29,9 @@ def main():
             print("\nRunning all algorithms...")
             # run_simulation("all")  # returns comparison graph data
         elif choice == 2:
-            run_visual_simulation(algorithm="baseline", num_ms=20)
+            run_visual_simulation(algorithm="baseline", num_ms=70)
         elif choice == 3:
-            run_visual_simulation(algorithm="adaptive", num_ms=20)
+            run_visual_simulation(algorithm="adaptive", num_ms=70)
         elif choice == 4:
             print("\nRunning Adaptive Fuzzy...")
             # run_simulation("fuzzy")  # visual only

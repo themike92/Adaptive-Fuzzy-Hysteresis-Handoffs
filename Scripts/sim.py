@@ -10,18 +10,28 @@ from results import Results
 
 #Hysteresis constants. All H values are in dBm
 H_FIXED = 5             # fixed margin used by the baseline algorithm
-H_DEF   = 8             # default margin for adaptive and fuzzy algorithms
+H_DEF   = 5             # default margin for adaptive and fuzzy algorithms
 H_MIN   = 2             # minimum margin so it never gets too small
 H_MAX   = 10            # maximum margin so it never gets too large
-K       = 0.06          # sensitivity constant, controls how much speed affects the margin
+K       = 0.05         # sensitivity constant, controls how much speed affects the margin
 
 # Drop threshold, in dBm
-RSS_DROP_THRESHOLD = -95    
+RSS_DROP_THRESHOLD = -70    
 
 def ms_process(env, ms, network, algorithm, results):
     while True:
         ms.move()
         
+        if ms.connected_bs is not None:
+            if algorithm == "baseline":
+                target = baseline_handoff_decision(ms, network)
+            elif algorithm == "adaptive":
+                target = adaptive_hysteresis_handoff_decision(ms, network)
+            
+            if target:
+                perform_handoff(ms, target, env.now, results)
+            
+            
         dropped = check_call_drop(ms, env.now, results)
         
         if dropped:
@@ -31,14 +41,29 @@ def ms_process(env, ms, network, algorithm, results):
                 best_bs.add_call(ms)
                 ms.connected_bs = best_bs
                 ms.call_dropped = False  # reconnected, reset dropped flag
-        else:
-            if algorithm == "baseline":
-                target = baseline_handoff_decision(ms, network)
-            elif algorithm == "adaptive":
-                target = adaptive_hysteresis_handoff_decision(ms, network)
             
-            if target:
-                perform_handoff(ms, target, env.now, results)
+        yield env.timeout(1)
+       
+       
+    #BS simpy process to check for overload and drop calls if necessary 
+def bs_management_process(env, network, results):
+
+    while True:
+        for bs in network.base_stations:
+            
+            # log load before potential drop
+            if results:
+                results.record_load(env.now, bs)
+                
+            # if still overloaded after capacity adjustment, drop weakest MS
+            if bs.is_overloaded():
+                dropped_ms = bs.drop_weakest_call()
+                
+                if dropped_ms:
+                    dropped_ms.drop_count   += 1
+                
+                if dropped_ms and results:
+                    results.record_call_drop(env.now, dropped_ms)
         
         yield env.timeout(1)
 
@@ -78,7 +103,7 @@ def baseline_handoff_decision(ms, network):
 #Decide whether or not the handoff decision should be made based on the adaptive margin and the RSS  
 
 def calculate_adaptive_H_Value(ms):
-    value = H_DEF + K * ms.speed
+    value = H_DEF - K * ms.speed
     
     if value < H_MIN:
         value = H_MIN
@@ -144,7 +169,7 @@ def perform_handoff(ms, target_bs, time, results):
     if target_bs.add_call(ms):
         ms.connected_bs = target_bs
         ms.handoff_count += 1
-        ms.handoff_flash = 5
+        ms.handoff_flash = 1
 
         if results:
             results.record_handoff(time, ms, old_BS, target_bs)
@@ -165,18 +190,6 @@ def check_call_drop(ms, curr_time, results):
     if ms.connected_bs is None:
         ms.call_dropped = True
         return True
-    
-    # check if MS has left the BS coverage range
-    distance = ms.connected_bs.calculate_distance(ms)
-    if distance > ms.connected_bs.coverage_radius:
-        ms.connected_bs.remove_call(ms)
-        ms.connected_bs = None
-        ms.call_dropped = True
-
-        if results:
-            results.record_call_drop(curr_time, ms)
-
-        return True
 
     curr_rss = ms.connected_bs.calculate_rss(ms)
 
@@ -187,6 +200,7 @@ def check_call_drop(ms, curr_time, results):
         ms.connected_bs.remove_call(ms)
         ms.connected_bs = None
         ms.call_dropped = True
+        ms.drop_count   += 1
         
         if results:
             results.record_call_drop(curr_time, ms)
@@ -231,13 +245,18 @@ def run_visual_simulation(algorithm, num_ms):
     # register all MS processes
     for ms in network.mobile_stations:
         env.process(ms_process(env, ms, network, algorithm, results))
+        
+    # register BS management process — runs every time step
+    env.process(bs_management_process(env, network, results))
     
-    viz = Visualizer(network, cell_radius=170, signal_radius=280)
+    viz = Visualizer(network, cell_radius=170, signal_radius=250)
     
     def sim_step():
-        env.step()  # advance simpy one event at a time
+        next_time = env.now + 1
+        while env.peek() <= next_time and env.peek() < float('inf'):
+            env.step()
     
-    viz.start(sim_step, interval=100, duration=300)
+    viz.start(sim_step, interval=450, duration=200)
 
     # window closed, print summary
     results.print_summary(network.mobile_stations)
