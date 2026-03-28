@@ -5,7 +5,8 @@ import random
 from base_station import BaseStation
 from mobile_station import MobileStation
 
-MAX_CAPACITY = 20
+#max BS capacity
+MAX_BS_CAPACITY = 17
 
 class Network:
     
@@ -24,21 +25,31 @@ class Network:
         centers = self.generate_hex_centers(center_x, center_y, cell_radius, rings)
         self.base_stations = []
  
-        #Go through the list of centers are creat a BS object for each one
+        # Predefined base station configurations
+        configs = [
+            {"power": 30, "noise": 2.2, "congestion": 0.5},  
+            {"power": 32, "noise": 1.8, "congestion": 0.5},  
+            {"power": 27, "noise": 2.5, "congestion": 0.6},  
+            {"power": 30, "noise": 1.5, "congestion": 0.7},  
+            {"power": 25, "noise": 4.0, "congestion": 0.4},  
+            {"power": 28, "noise": 3.0, "congestion": 0.5},  
+            {"power": 26, "noise": 2.7, "congestion": 0.3},  
+        ]
+
         for i, (x, y) in enumerate(centers):
+            config = configs[i]
+
             bs = BaseStation(
-                #Set the BSs base paramters
-                id           = i,
-                x            = x,
-                y            = y,
-                
-                #ensure a slight metric variation for each BS (besides capacity which is the same for all BSs)
-                power        = random.uniform(40, 46),
-                noise        = random.uniform(1, 3),
-                congestion   = random.uniform(0.3, 0.7),
-                max_capacity = MAX_CAPACITY,
-                coverage_radius = 280
+                id=i,
+                x=x,
+                y=y,
+                power=config["power"],
+                noise=config["noise"],
+                congestion=config["congestion"],
+                max_capacity=MAX_BS_CAPACITY,
+                coverage_radius=250
             )
+
             self.base_stations.append(bs)
  
         return self.base_stations
@@ -49,7 +60,7 @@ class Network:
         self.mobile_stations = []
         
         for i in range(num):
-            ms = MobileStation(id=i, bounds=self.bounds)
+            ms = MobileStation(id=i)
             self.mobile_stations.append(ms)
         
         return self.mobile_stations
@@ -132,7 +143,7 @@ class Network:
         #If no BS is avaliable, the MS stays unconnected (nothing changes from their default value)
         
         
-        
+    
     
     #Print functions 
     #Network topology summary:

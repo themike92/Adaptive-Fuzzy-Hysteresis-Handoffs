@@ -4,6 +4,7 @@ class Results:
         self.handoffs   = []    # list of (time, ms_id, old_bs_id, new_bs_id)
         self.call_drops = []    # list of (time, ms_id)
         self.rss_log    = []    # list of (time, ms_id, rss)
+        self.load_log   = []    # list of (time, bs_id, load_percent)
         self.ping_pongs = []    # list of (time, ms_id)
     
     def record_handoff(self, time, ms, old_bs, new_bs):
@@ -14,6 +15,9 @@ class Results:
     
     def record_rss(self, time, ms, rss):
         self.rss_log.append((time, ms.id, rss))
+        
+    def record_load(self, time, bs):
+        self.load_log.append((time, bs.id, bs.get_cell_load()))
     
     def record_ping_pong(self, time, ms):
         self.ping_pongs.append((time, ms.id))
@@ -52,11 +56,11 @@ class Results:
             print(f"  Average RSS      : {avg_rss:.2f} dBm")
             
             # call quality based on average RSS
-            if avg_rss >= -70:
+            if avg_rss >= -40:
                 quality = "Excellent"
-            elif avg_rss >= -80:
+            elif avg_rss >= -50:
                 quality = "Good"
-            elif avg_rss >= -90:
+            elif avg_rss >= -60:
                 quality = "Fair"
             else:
                 quality = "Poor"
@@ -75,17 +79,27 @@ class Results:
             
             avg = sum(ms_rss) / len(ms_rss) if ms_rss else 0
             
-            if avg >= -70:
+            if avg >= -40:
                 q = "Excellent"
-            elif avg >= -80:
+            elif avg >= -50:
                 q = "Good"
-            elif avg >= -90:
+            elif avg >= -60:
                 q = "Fair"
             else:
                 q = "Poor"
             
-            dropped = "Yes" if ms.call_dropped else "No"
+            
             speed = ms.get_speed_category()
-            print(f"  MS-{ms.id:<4} ({speed}){'':<{12-len(speed)}} {len(ms_handoffs):<12} {dropped:<10} {avg:<12.2f} {q}")
+            print(f"  MS-{ms.id:<4} ({speed}){'':<{12-len(speed)}} {len(ms_handoffs):<12} {ms.drop_count:<10} {avg:<12.2f} {q}")
+            
+        if self.load_log:
+            print(f"\n  Cell Load Summary")
+            print(f"  {'-'*70}")
+            
+            for bs_id in sorted(set(entry[1] for entry in self.load_log)):
+                bs_loads = [entry[2] for entry in self.load_log if entry[1] == bs_id]
+                avg_load = sum(bs_loads) / len(bs_loads)
+                max_load = max(bs_loads)
+                print(f"  BS{bs_id:<4} avg load: {avg_load:>5.1f}%   peak load: {max_load:>5.1f}%")
         
         print(f"\n{'='*75}\n")

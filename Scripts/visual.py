@@ -31,6 +31,8 @@ class Visualizer:
         self.hex_patches = []
         
         self._draw_hex_grid()
+        #IF YOU CHANGE THE MS CIRCLE BOUNDARY CHANGE THE VISUAL TOO
+        self._draw_boundary(cx=500, cy=500, boundary_radius=525)
         self._init_stations()
     
     def _hex_corners(self, cx, cy):
@@ -63,7 +65,7 @@ class Visualizer:
                 fill=True,
                 facecolor="#20456e",
                 edgecolor='none',
-                alpha=0.05  # very faint
+                alpha=0.1  # very faint
             )
             self.ax.add_patch(range_circle)
     
@@ -177,7 +179,22 @@ class Visualizer:
         self.ani = animation.FuncAnimation(
             self.fig, animate,
             interval=interval,
-            blit=False
+            blit=False,
+            cache_frame_data=False
         )
         plt.tight_layout()
         plt.show()
+        
+        
+    def _draw_boundary(self, cx, cy, boundary_radius):
+        boundary_circle = patches.Circle(
+            (cx, cy),
+            radius=boundary_radius,
+            fill=False,
+            edgecolor='#ffffff',
+            linewidth=1.5,
+            linestyle='--',
+            alpha=0.3,
+            zorder=2
+        )
+        self.ax.add_patch(boundary_circle)

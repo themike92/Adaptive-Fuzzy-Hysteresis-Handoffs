@@ -4,24 +4,28 @@ import math
 
 #Different speed categories for MSs
 STATIONARY = 5
-SLOW = 35
-FAST = 70
-VERY_FAST = 120
+SLOW = 15
+FAST = 55
+VERY_FAST = 90
 SPEEDS = [STATIONARY, SLOW, FAST, VERY_FAST]
 
 # time steps before changing direction
-DIRECTION_CHANGE_INTERVAL = 25  
+DIRECTION_CHANGE_INTERVAL = 25 
 
 class MobileStation:
-    def __init__(self, id, bounds=(0, 1000, 0, 1000)):
+    def __init__(self, id, bounds=(200, 800, 150, 900)):
         #identifier for the mobile station
         self.id = id
         self.bounds = bounds
 
         #initial random position and speed
-        self.x = random.randint(bounds[0], bounds[1])
+        #make sure the MS start in the range of the BSs
+        self.x = random.randint(bounds[0], bounds[1]) 
         self.y = random.randint(bounds[2], bounds[3])
-        self.speed = random.choice(SPEEDS)
+        self.speed = random.choices(
+            SPEEDS,
+            weights=[0.05, 0.2, 0.4, 0.35]
+        )[0]
         
         
         #determine the direction of the MS (radians)
@@ -37,6 +41,9 @@ class MobileStation:
         
         #determine if the current MS has experienced a call drop 
         self.call_dropped  = False
+        
+        #call drop counter
+        self.drop_count   = 0
 
         # countdown timer for purple flash
         self.handoff_flash = 0
@@ -47,14 +54,12 @@ class MobileStation:
         self.next_y = self.y    # position at end of last sim step
         
     #advance MS by a certain amount each time step, in the same direction for a while
-    def move(self, dt=1):
-        #use the current speed and direction to update position
-        #make them bounce off the walls if they hit the boundary
-        
+    #Boundary radius is the circle that the MSs bounce off
+    #MSs refelct either off the walls, or the circle boundary
+    def move(self, dt=1, cx=500, cy=500, boundary_radius=525):
         if self.speed == STATIONARY:
             return
 
-        # Save where we were before moving
         self.prev_x = self.x
         self.prev_y = self.y
 
@@ -64,21 +69,31 @@ class MobileStation:
         new_x = self.x + dx
         new_y = self.y + dy
 
-        x_min, x_max, y_min, y_max = self.bounds
+        x_min, x_max, y_min, y_max = 0, 1000, 0, 1000
 
-        #bounce off the walls when hit
+        # Reflect off horizontal walls
         if new_x < x_min or new_x > x_max:
             self.direction = math.pi - self.direction
             new_x = max(x_min, min(new_x, x_max))
 
+        # Reflect off vertical walls
         if new_y < y_min or new_y > y_max:
             self.direction = -self.direction
             new_y = max(y_min, min(new_y, y_max))
 
+        
+        # If on circle boundary, bounce back within the cell cluster
+        dist_from_center = math.sqrt((new_x - cx)**2 + (new_y - cy)**2)
+        if dist_from_center > boundary_radius:
+            angle_to_center = math.atan2(cy - self.y, cx - self.x)
+            self.direction  = angle_to_center + random.uniform(-math.pi / 4, math.pi / 4)
+            # Don't move this step, just redirect
+            new_x = self.x
+            new_y = self.y
+
         self.x = new_x
         self.y = new_y
 
-        # Save where we ended up
         self.next_x = self.x
         self.next_y = self.y
 
