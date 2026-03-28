@@ -34,6 +34,9 @@ class Visualizer:
         #IF YOU CHANGE THE MS CIRCLE BOUNDARY CHANGE THE VISUAL TOO
         self._draw_boundary(cx=500, cy=500, boundary_radius=415)
         self._init_stations()
+
+        self.sub_frames    = 4   # animation frames between each sim step
+        self.current_sub   = 0
     
     def _hex_corners(self, cx, cy):
         corners = []
@@ -123,14 +126,14 @@ class Visualizer:
             labelcolor='white'
         )
     
-    def update(self, frame):
-        ms_x = [ms.x for ms in self.network.mobile_stations]
-        ms_y = [ms.y for ms in self.network.mobile_stations]
+    def update(self, frame, t):
+        ms_x = [ms.prev_x + (ms.x - ms.prev_x) * t for ms in self.network.mobile_stations]
+        ms_y = [ms.prev_y + (ms.y - ms.prev_y) * t for ms in self.network.mobile_stations]
         self.ms_scatter.set_offsets(list(zip(ms_x, ms_y)))
         
         # update MS labels
         for i, ms in enumerate(self.network.mobile_stations):
-            self.ms_labels[i].set_position((ms.x, ms.y + 15))
+            self.ms_labels[i].set_position((ms_x[i], ms_y[i] + 15))
 
         # update MS colors based on state
         colors = []
@@ -138,8 +141,9 @@ class Visualizer:
             if ms.handoff_flash > 0:
                 colors.append('#bf5fff')   # purple - handoff
                 ms.handoff_flash -= 1
-            elif ms.call_dropped:
+            elif ms.drop_flash > 0:
                 colors.append('#ff4444')   # red - call dropped
+                ms.drop_flash -= 1
             elif ms.connected_bs is None:
                 colors.append('#888888')   # grey - out of range
             else:
@@ -151,12 +155,11 @@ class Visualizer:
             line.remove()
         self.connections = []
         
-        # draw connection lines
-        for ms in self.network.mobile_stations:
+        for i, ms in enumerate(self.network.mobile_stations):
             if ms.connected_bs:
                 line, = self.ax.plot(
-                    [ms.x, ms.connected_bs.x],
-                    [ms.y, ms.connected_bs.y],
+                    [ms_x[i], ms.connected_bs.x],
+                    [ms_y[i], ms.connected_bs.y],
                     color='#ffd700', linewidth=0.8,
                     alpha=0.4, zorder=3
                 )
@@ -164,19 +167,25 @@ class Visualizer:
         
         return [self.ms_scatter] + self.connections
     
-    def start(self, sim_step_fn, interval=100, duration=100):
+    def start(self, sim_step_fn, interval, duration):
         self.frame_count = 0
         self.duration = duration
         
         def animate(frame):
-            if self.frame_count >= self.duration:
-                self.ani.event_source.stop()  # stop animation
-                plt.close()                   # close window
-                return [self.ms_scatter]
-            
-            sim_step_fn()
-            self.frame_count += 1
-            return self.update(frame)
+            # only advance simulation every sub_frames animation frames
+            if self.current_sub == 0:
+                if self.frame_count >= self.duration:
+                    self.ani.event_source.stop()
+                    plt.close()
+                    return [self.ms_scatter]
+                sim_step_fn()
+                self.frame_count += 1
+
+            # interpolation factor: 0.0 at start of step, 1.0 at end
+            t = self.current_sub / self.sub_frames
+            self.current_sub = (self.current_sub + 1) % self.sub_frames
+
+            return self.update(frame, t)
         
         self.ani = animation.FuncAnimation(
             self.fig, animate,

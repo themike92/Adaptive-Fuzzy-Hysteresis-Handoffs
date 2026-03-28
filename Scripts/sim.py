@@ -61,6 +61,7 @@ def bs_management_process(env, network, results):
                 
                 if dropped_ms:
                     dropped_ms.drop_count   += 1
+                    dropped_ms.drop_flash = 2
                 
                 if dropped_ms and results:
                     results.record_call_drop(env.now, dropped_ms, reason="capacity")
@@ -169,7 +170,7 @@ def perform_handoff(ms, target_bs, time, results):
     if target_bs.add_call(ms):
         ms.connected_bs = target_bs
         ms.handoff_count += 1
-        ms.handoff_flash = 1
+        ms.handoff_flash = 2
 
         if results:
             results.record_handoff(time, ms, old_BS, target_bs)
@@ -201,6 +202,8 @@ def check_call_drop(ms, curr_time, results):
         ms.connected_bs = None
         ms.call_dropped = True
         ms.drop_count   += 1
+        ms.drop_flash = 2
+        ms._drop_flash_set = True
         
         if results:
             results.record_call_drop(curr_time, ms, reason="rss")
@@ -210,7 +213,7 @@ def check_call_drop(ms, curr_time, results):
     return False
     
 
-def run_simulation(algorithm="baseline", num_ms=10, duration=50):
+def run_simulation(algorithm, num_ms, duration):
     env = simpy.Environment()
     
     network = Network()
