@@ -16,7 +16,7 @@ H_MAX   = 10            # maximum margin so it never gets too large
 K       = 0.05         # sensitivity constant, controls how much speed affects the margin
 
 # Drop threshold, in dBm
-RSS_DROP_THRESHOLD = -85    
+RSS_DROP_THRESHOLD = -77    
 
 def ms_process(env, ms, network, algorithm, results):
     while True:
@@ -256,7 +256,7 @@ def run_visual_simulation(algorithm, num_ms):
         while env.peek() <= next_time and env.peek() < float('inf'):
             env.step()
     
-    viz.start(sim_step, interval=50, duration=200)
+    viz.start(sim_step, interval=50, duration=100)
 
     # window closed, print summary
     results.print_summary(network.mobile_stations)
