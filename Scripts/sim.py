@@ -16,7 +16,7 @@ H_MAX   = 10            # maximum margin so it never gets too large
 K       = 0.05         # sensitivity constant, controls how much speed affects the margin
 
 # Drop threshold, in dBm
-RSS_DROP_THRESHOLD = -70    
+RSS_DROP_THRESHOLD = -85    
 
 def ms_process(env, ms, network, algorithm, results):
     while True:
@@ -63,7 +63,7 @@ def bs_management_process(env, network, results):
                     dropped_ms.drop_count   += 1
                 
                 if dropped_ms and results:
-                    results.record_call_drop(env.now, dropped_ms)
+                    results.record_call_drop(env.now, dropped_ms, reason="capacity")
         
         yield env.timeout(1)
 
@@ -203,7 +203,7 @@ def check_call_drop(ms, curr_time, results):
         ms.drop_count   += 1
         
         if results:
-            results.record_call_drop(curr_time, ms)
+            results.record_call_drop(curr_time, ms, reason="rss")
         
         return True
 
@@ -249,14 +249,14 @@ def run_visual_simulation(algorithm, num_ms):
     # register BS management process — runs every time step
     env.process(bs_management_process(env, network, results))
     
-    viz = Visualizer(network, cell_radius=170, signal_radius=250)
+    viz = Visualizer(network, cell_radius=130, signal_radius=210)
     
     def sim_step():
         next_time = env.now + 1
         while env.peek() <= next_time and env.peek() < float('inf'):
             env.step()
     
-    viz.start(sim_step, interval=450, duration=200)
+    viz.start(sim_step, interval=50, duration=200)
 
     # window closed, print summary
     results.print_summary(network.mobile_stations)

@@ -13,7 +13,7 @@ SPEEDS = [STATIONARY, SLOW, FAST, VERY_FAST]
 DIRECTION_CHANGE_INTERVAL = 25 
 
 class MobileStation:
-    def __init__(self, id, bounds=(200, 800, 150, 900)):
+    def __init__(self, id, bounds=(235, 765, 235, 765)):
         #identifier for the mobile station
         self.id = id
         self.bounds = bounds
@@ -56,7 +56,7 @@ class MobileStation:
     #advance MS by a certain amount each time step, in the same direction for a while
     #Boundary radius is the circle that the MSs bounce off
     #MSs refelct either off the walls, or the circle boundary
-    def move(self, dt=1, cx=500, cy=500, boundary_radius=525):
+    def move(self, dt=1, cx=500, cy=500, boundary_radius=415):
         if self.speed == STATIONARY:
             return
 

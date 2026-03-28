@@ -119,7 +119,7 @@ class BaseStation:
         if distance == 0:
             distance = 0.1
         
-        path_loss = 10 * 3.5 * math.log10(distance)
+        path_loss = 10 * 4.0 * math.log10(distance)
         noise = random.gauss(0, self.noise)
         congestion_penalty = len(self.active_calls) * self.congestion
         
