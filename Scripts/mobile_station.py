@@ -47,6 +47,8 @@ class MobileStation:
 
         # countdown timer for purple flash
         self.handoff_flash = 0
+        self.drop_flash = 0
+        self._drop_flash_set = False
         
         self.prev_x = self.x    # position at start of last sim step
         self.prev_y = self.y    # position at start of last sim step
@@ -87,9 +89,13 @@ class MobileStation:
         if dist_from_center > boundary_radius:
             angle_to_center = math.atan2(cy - self.y, cx - self.x)
             self.direction  = angle_to_center + random.uniform(-math.pi / 4, math.pi / 4)
-            # Don't move this step, just redirect
-            new_x = self.x
-            new_y = self.y
+
+            # take a step in the new direction instead of stopping
+            new_x = self.x + self.speed * math.cos(self.direction) * dt
+            new_y = self.y + self.speed * math.sin(self.direction) * dt
+            # clamp just in case
+            new_x = max(0, min(1000, new_x))
+            new_y = max(0, min(1000, new_y))
 
         self.x = new_x
         self.y = new_y

@@ -50,7 +50,7 @@ class Results:
         print(f"  Total handoffs   : {len(self.handoffs)}")
         print(f"  Total call drops : {len(self.call_drops)}")
         print(f"  Ping-pong events : {len(self.ping_pongs)}")
-        
+
         rss_drops      = [d for d in self.call_drops if d[2] == "rss"]
         capacity_drops = [d for d in self.call_drops if d[2] == "capacity"]
         unknown_drops  = [d for d in self.call_drops if d[2] == "unknown"]
@@ -100,7 +100,22 @@ class Results:
             
             speed = ms.get_speed_category()
             print(f"  MS-{ms.id:<4} ({speed}){'':<{12-len(speed)}} {len(ms_handoffs):<12} {ms.drop_count:<10} {avg:<12.2f} {q}")
-            
+        
+        print(f"\n  Drops by Speed Category")
+        print(f"  {'-'*40}")
+        print(f"  {'Speed':<14} {'# of MS':<10} {'Drops'}")
+        print(f"  {'-'*40}")
+
+        speed_categories = ["stationary", "slow", "fast", "very_fast"]
+        for category in speed_categories:
+            category_ms = [ms for ms in mobile_stations if ms.get_speed_category() == category]
+            if not category_ms:
+                continue
+            total_drops = sum(ms.drop_count for ms in category_ms)
+            print(f"  {category:<14} {len(category_ms):<10} {total_drops}")
+
+        print(f"\n{'='*55}\n")
+
         if self.load_log:
             print(f"\n  Cell Load Summary")
             print(f"  {'-'*70}")
