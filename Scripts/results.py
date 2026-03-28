@@ -10,8 +10,8 @@ class Results:
     def record_handoff(self, time, ms, old_bs, new_bs):
         self.handoffs.append((time, ms.id, old_bs.id, new_bs.id))
     
-    def record_call_drop(self, time, ms):
-        self.call_drops.append((time, ms.id))
+    def record_call_drop(self, time, ms, reason="unknown"):
+        self.call_drops.append((time, ms.id, reason))
     
     def record_rss(self, time, ms, rss):
         self.rss_log.append((time, ms.id, rss))
@@ -50,6 +50,15 @@ class Results:
         print(f"  Total handoffs   : {len(self.handoffs)}")
         print(f"  Total call drops : {len(self.call_drops)}")
         print(f"  Ping-pong events : {len(self.ping_pongs)}")
+        
+        rss_drops      = [d for d in self.call_drops if d[2] == "rss"]
+        capacity_drops = [d for d in self.call_drops if d[2] == "capacity"]
+        unknown_drops  = [d for d in self.call_drops if d[2] == "unknown"]
+
+        print(f"  Total call drops : {len(self.call_drops)}")
+        print(f"    - RSS drops    : {len(rss_drops)}")
+        print(f"    - Capacity     : {len(capacity_drops)}")
+        print(f"    - Other        : {len(unknown_drops)}")
         
         if self.rss_log:
             avg_rss = sum(r[2] for r in self.rss_log) / len(self.rss_log)

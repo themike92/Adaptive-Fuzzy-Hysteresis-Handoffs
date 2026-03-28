@@ -32,7 +32,7 @@ class Visualizer:
         
         self._draw_hex_grid()
         #IF YOU CHANGE THE MS CIRCLE BOUNDARY CHANGE THE VISUAL TOO
-        self._draw_boundary(cx=500, cy=500, boundary_radius=525)
+        self._draw_boundary(cx=500, cy=500, boundary_radius=415)
         self._init_stations()
     
     def _hex_corners(self, cx, cy):
@@ -109,9 +109,10 @@ class Visualizer:
         # legend
         legend_elements = [
             Line2D([0], [0], marker='^', color='w', markerfacecolor='#4a9eff', markersize=10, label='Base Station', linestyle='None'),
-            Line2D([0], [0], marker='o', color='w', markerfacecolor='#ff6b6b', markersize=8, label='MS - Connected', linestyle='None'),
+            Line2D([0], [0], marker='o', color='w', markerfacecolor='#44ff88', markersize=8, label='MS - Connected', linestyle='None'),
             Line2D([0], [0], marker='o', color='w', markerfacecolor='#bf5fff', markersize=8, label='MS - Handoff', linestyle='None'),
-            Line2D([0], [0], marker='o', color='w', markerfacecolor='#888888', markersize=8, label='MS - Dropped', linestyle='None'),
+            Line2D([0], [0], marker='o', color='w', markerfacecolor='#ff4444', markersize=8, label='MS - Call Dropped', linestyle='None'),
+            Line2D([0], [0], marker='o', color='w', markerfacecolor='#888888', markersize=8, label='MS - Out of Range', linestyle='None'),
         ]
 
         self.ax.legend(
@@ -123,25 +124,26 @@ class Visualizer:
         )
     
     def update(self, frame):
-        # update MS positions
         ms_x = [ms.x for ms in self.network.mobile_stations]
         ms_y = [ms.y for ms in self.network.mobile_stations]
         self.ms_scatter.set_offsets(list(zip(ms_x, ms_y)))
         
-            # update MS labels
+        # update MS labels
         for i, ms in enumerate(self.network.mobile_stations):
             self.ms_labels[i].set_position((ms.x, ms.y + 15))
 
-         # update MS colors based on state
+        # update MS colors based on state
         colors = []
         for ms in self.network.mobile_stations:
-            if ms.call_dropped or ms.connected_bs is None:
-                colors.append('#888888')   # grey - dropped
-            elif ms.handoff_flash > 0:
-                colors.append('#bf5fff')   # purple - just handed off
+            if ms.handoff_flash > 0:
+                colors.append('#bf5fff')   # purple - handoff
                 ms.handoff_flash -= 1
+            elif ms.call_dropped:
+                colors.append('#ff4444')   # red - call dropped
+            elif ms.connected_bs is None:
+                colors.append('#888888')   # grey - out of range
             else:
-                colors.append('#ff6b6b')   # red - connected
+                colors.append('#44ff88')   # green - connected
         self.ms_scatter.set_color(colors)
 
         # clear old connection lines
@@ -149,7 +151,7 @@ class Visualizer:
             line.remove()
         self.connections = []
         
-        # draw connection lines from each MS to its BS
+        # draw connection lines
         for ms in self.network.mobile_stations:
             if ms.connected_bs:
                 line, = self.ax.plot(
