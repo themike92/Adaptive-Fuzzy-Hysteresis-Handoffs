@@ -1,6 +1,6 @@
 #This will call our simulation with the algorithm we want to test
 
-from sim import run_simulation, run_visual_simulation
+from sim import run_visual_simulation, run_all_simulations, generate_network, reset_network
 
 def display_menu():
     print("\n=== Handoff Algorithm Simulator ===")
@@ -20,21 +20,30 @@ def get_user_choice():
         except ValueError:
             print("Invalid input, please enter a number.")
 
+def get_num_ms():
+    return 70
+
 def main():
+    print("\n=== Handoff Algorithm Simulator ===")
+    num_ms  = get_num_ms()
+    network = generate_network(num_ms)
+
     while True:
         display_menu()
         choice = get_user_choice()
 
         if choice == 1:
             print("\nRunning all algorithms...")
-            # run_simulation("all")  # returns comparison graph data
+            run_all_simulations(network=network)
         elif choice == 2:
-            run_visual_simulation(algorithm="baseline", num_ms=70)
+            reset_network(network)
+            run_visual_simulation(algorithm="baseline", network=network)
         elif choice == 3:
-            run_visual_simulation(algorithm="adaptive", num_ms=70)
+            reset_network(network)
+            run_visual_simulation(algorithm="adaptive", network=network)
         elif choice == 4:
-            print("\nRunning Adaptive Fuzzy...")
-            # run_simulation("fuzzy")  # visual only
+            reset_network(network)
+            run_visual_simulation(algorithm="fuzzy", network=network)
         elif choice == 5:
             print("\nExiting...")
             break

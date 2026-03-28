@@ -6,6 +6,7 @@ from base_station import BaseStation
 from mobile_station import MobileStation
 
 #max BS capacity
+#Not used currently
 MAX_BS_CAPACITY = 20
 
 class Network:

@@ -16,7 +16,11 @@ H_MAX   = 10            # maximum margin so it never gets too large
 K       = 0.05         # sensitivity constant, controls how much speed affects the margin
 
 # Drop threshold, in dBm
-RSS_DROP_THRESHOLD = -77    
+RSS_DROP_THRESHOLD = -77
+
+# Simulation defaults
+SIM_DURATION = 100
+SIM_INTERVAL = 20
 
 def ms_process(env, ms, network, algorithm, results):
     while True:
@@ -25,8 +29,12 @@ def ms_process(env, ms, network, algorithm, results):
         if ms.connected_bs is not None:
             if algorithm == "baseline":
                 target = baseline_handoff_decision(ms, network)
+
             elif algorithm == "adaptive":
                 target = adaptive_hysteresis_handoff_decision(ms, network)
+
+            elif algorithm == "fuzzy":
+                pass  # to be implemented
             
             if target:
                 perform_handoff(ms, target, env.now, results)
@@ -211,46 +219,67 @@ def check_call_drop(ms, curr_time, results):
         return True
 
     return False
-    
 
-def run_simulation(algorithm, num_ms, duration):
-    env = simpy.Environment()
-    
+def generate_network(num_ms):
     network = Network()
     network.generate_base_stations()
     network.generate_mobile_stations(num_ms)
-    network.initial_connections()
+    return network
+
+def reset_network(network):
+    # reset all BS active calls
+    for bs in network.base_stations:
+        bs.active_calls = []
     
-    network.print_summary()
-    
+    # reset MS connection state but keep position, speed and direction
     for ms in network.mobile_stations:
-        env.process(ms_process(env, ms, network, algorithm))
-    
-    env.run(until=duration)
-    
-    print("\nSimulation complete.")
-    print(f"Algorithm : {algorithm}")
-    print(f"Duration  : {duration} time steps")
-    print(f"MSs ran   : {num_ms}")
+        ms.connected_bs   = None
+        ms.call_dropped   = False
+        ms.drop_count     = 0
+        ms.handoff_count  = 0
+        ms.handoff_flash  = 0
+        ms.drop_flash     = 0
+        ms.prev_x         = ms.x
+        ms.prev_y         = ms.y
+        ms.next_x         = ms.x
+        ms.next_y         = ms.y
 
 
-def run_visual_simulation(algorithm, num_ms):
+def _build_env(network, algorithm, results):
     env = simpy.Environment()
-    results = Results(algorithm)
-    
-    network = Network()
-    network.generate_base_stations()
-    network.generate_mobile_stations(num_ms)
     network.initial_connections()
-    
     network.print_summary()
     
-    # register all MS processes
     for ms in network.mobile_stations:
         env.process(ms_process(env, ms, network, algorithm, results))
-        
-    # register BS management process — runs every time step
+    
     env.process(bs_management_process(env, network, results))
+    return env
+
+def run_all_simulations(network):
+    algorithms = ["baseline", "adaptive", "fuzzy"]
+    all_results = {}
+    
+    for algorithm in algorithms:
+        print(f"\nRunning {algorithm}...")
+        reset_network(network)
+        
+        results = Results(algorithm)
+        env     = _build_env(network, algorithm, results)
+        
+        env.run(until=SIM_DURATION)
+        
+        print(f"  Complete — {len(network.mobile_stations)} MSs, {SIM_DURATION} steps")
+        
+        all_results[algorithm] = results
+    
+    return all_results
+
+
+def run_visual_simulation(algorithm, network):
+    results = Results(algorithm)
+    env     = _build_env(network, algorithm, results)
+    
     
     viz = Visualizer(network, cell_radius=130, signal_radius=210)
     
@@ -262,4 +291,9 @@ def run_visual_simulation(algorithm, num_ms):
     viz.start(sim_step, interval=50, duration=100)
 
     # window closed, print summary
+    print(f"\nSimulation complete.")
+    print(f"  Algorithm : {algorithm}")
+    print(f"  Duration  : {SIM_DURATION} time steps")
+    print(f"  MSs       : {len(network.mobile_stations)}")
+    
     results.print_summary(network.mobile_stations)
