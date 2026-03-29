@@ -1,6 +1,7 @@
 #This will call our simulation with the algorithm we want to test
 
 from sim import run_visual_simulation, run_all_simulations, generate_network, reset_network
+from graphs import generate_all_graphs
 
 def display_menu():
     print("\n=== Handoff Algorithm Simulator ===")
@@ -24,7 +25,6 @@ def get_num_ms():
     return 70
 
 def main():
-    print("\n=== Handoff Algorithm Simulator ===")
     num_ms  = get_num_ms()
     network = generate_network(num_ms)
 
@@ -34,7 +34,9 @@ def main():
 
         if choice == 1:
             print("\nRunning all algorithms...")
-            run_all_simulations(network=network)
+            reset_network(network)
+            all_results = run_all_simulations(network)
+            generate_all_graphs(all_results, network.mobile_stations)
         elif choice == 2:
             reset_network(network)
             run_visual_simulation(algorithm="baseline", network=network)

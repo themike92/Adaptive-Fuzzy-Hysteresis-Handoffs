@@ -5,6 +5,7 @@ class Results:
         self.call_drops = []    # list of (time, ms_id)
         self.rss_log    = []    # list of (time, ms_id, rss)
         self.load_log   = []    # list of (time, bs_id, load_percent)
+        self.snr_log    = []
         self.ping_pongs = []    # list of (time, ms_id)
     
     def record_handoff(self, time, ms, old_bs, new_bs):
@@ -18,6 +19,9 @@ class Results:
         
     def record_load(self, time, bs):
         self.load_log.append((time, bs.id, bs.get_cell_load()))
+
+    def record_snr(self, time, ms, snr):
+        self.snr_log.append((time, ms.id, snr))
     
     def record_ping_pong(self, time, ms):
         self.ping_pongs.append((time, ms.id))

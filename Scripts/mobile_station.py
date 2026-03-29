@@ -5,8 +5,8 @@ import math
 #Different speed categories for MSs
 STATIONARY = 5
 SLOW = 15
-FAST = 55
-VERY_FAST = 90
+FAST = 35
+VERY_FAST = 70
 SPEEDS = [STATIONARY, SLOW, FAST, VERY_FAST]
 
 # time steps before changing direction
