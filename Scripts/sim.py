@@ -11,12 +11,12 @@ from results import Results
 #Hysteresis constants. All H values are in dBm
 H_FIXED = 5             # fixed margin used by the baseline algorithm
 H_DEF   = 5             # default margin for adaptive and fuzzy algorithms
-H_MIN   = 2             # minimum margin so it never gets too small
-H_MAX   = 10            # maximum margin so it never gets too large
-K       = 0.05         # sensitivity constant, controls how much speed affects the margin
+H_MIN   = 1             # minimum margin so it never gets too small
+H_MAX   = 12            # maximum margin so it never gets too large
+K       = 0.08          # sensitivity constant, controls how much speed affects the margin
 
 # Drop threshold, in dBm
-RSS_DROP_THRESHOLD = -77
+RSS_DROP_THRESHOLD = -73
 
 # Simulation defaults
 SIM_DURATION = 100
@@ -26,6 +26,9 @@ def ms_process(env, ms, network, algorithm, results):
     while True:
         ms.move()
         
+        # Refresh RSS cache once per time step so all comparisons use consistent values
+        ms.rss_cache = {bs.id: bs.calculate_rss(ms) for bs in network.base_stations}
+        
         if ms.connected_bs is not None:
             if algorithm == "baseline":
                 target = baseline_handoff_decision(ms, network)
@@ -34,7 +37,7 @@ def ms_process(env, ms, network, algorithm, results):
                 target = adaptive_hysteresis_handoff_decision(ms, network)
 
             elif algorithm == "fuzzy":
-                pass  # to be implemented
+                pass
             
             if target:
                 perform_handoff(ms, target, env.now, results)
@@ -88,7 +91,7 @@ def baseline_handoff_decision(ms, network):
             ms.connected_bs = best_bs 
         return None
     
-    current_rss = ms.connected_bs.calculate_rss(ms)
+    current_rss = ms.connected_bs.get_cached_rss(ms)
     neighboring_bss = network.get_neighbor_stations(ms.connected_bs)
     
     #Find the best BS in the list of neighbors
@@ -97,7 +100,7 @@ def baseline_handoff_decision(ms, network):
     
     #Compare the RSS of each neighboring BS, select the best one
     for bs in neighboring_bss:
-        rss = bs.calculate_rss(ms)
+        rss = bs.get_cached_rss(ms) 
         if rss > RSS_to_beat:
             RSS_to_beat = rss
             best_targetBS = bs
@@ -133,7 +136,7 @@ def adaptive_hysteresis_handoff_decision(ms, network):
     
     adaptive_H_margin = calculate_adaptive_H_Value(ms)
     
-    current_rss = ms.connected_bs.calculate_rss(ms)
+    current_rss = ms.connected_bs.get_cached_rss(ms) 
     neighboring_bss = network.get_neighbor_stations(ms.connected_bs)
     
     #Find the best BS in the list of neighbors
@@ -143,7 +146,7 @@ def adaptive_hysteresis_handoff_decision(ms, network):
     
     #Compare the RSS of each neighboring BS, select the best one
     for bs in neighboring_bss:
-        rss = bs.calculate_rss(ms)
+        rss = bs.get_cached_rss(ms) 
         if rss > RSS_to_beat:
             RSS_to_beat = rss
             best_targetBS = bs
@@ -158,8 +161,6 @@ def adaptive_hysteresis_handoff_decision(ms, network):
 #ALGORITHM 3, FUZZY QOS + ADAPTIVE HYSTERESIS
 #Calculate the FFDS for each neighboring BS, select the one with the highest score
 #Also calculate the adaptive hysteresis margin
-
-
 
 
 
@@ -200,7 +201,7 @@ def check_call_drop(ms, curr_time, results):
         ms.call_dropped = True
         return True
 
-    curr_rss = ms.connected_bs.calculate_rss(ms)
+    curr_rss = ms.connected_bs.get_cached_rss(ms)
 
     if results:
         results.record_rss(curr_time, ms, curr_rss)
@@ -288,7 +289,7 @@ def run_visual_simulation(algorithm, network):
         while env.peek() <= next_time and env.peek() < float('inf'):
             env.step()
     
-    viz.start(sim_step, interval=50, duration=100)
+    viz.start(sim_step, SIM_INTERVAL, SIM_DURATION)
 
     # window closed, print summary
     print(f"\nSimulation complete.")
