@@ -16,10 +16,10 @@ H_MAX   = 12            # maximum margin so it never gets too large
 K       = 0.08          # sensitivity constant, controls how much speed affects the margin
 
 # Drop threshold, in dBm
-RSS_DROP_THRESHOLD = -73
+RSS_DROP_THRESHOLD = -75
 
 # Simulation defaults
-SIM_DURATION = 100
+SIM_DURATION = 80
 SIM_INTERVAL = 50
 
 def ms_process(env, ms, network, algorithm, results):
@@ -202,9 +202,11 @@ def check_call_drop(ms, curr_time, results):
         return True
 
     curr_rss = ms.connected_bs.get_cached_rss(ms)
+    curr_snr = ms.connected_bs.calculate_snr(ms)
 
     if results:
         results.record_rss(curr_time, ms, curr_rss)
+        results.record_snr(curr_time, ms, curr_snr)
     
     if curr_rss < RSS_DROP_THRESHOLD:
         ms.connected_bs.remove_call(ms)
@@ -216,7 +218,7 @@ def check_call_drop(ms, curr_time, results):
         
         if results:
             results.record_call_drop(curr_time, ms, reason="rss")
-        
+            
         return True
 
     return False
@@ -282,7 +284,7 @@ def run_visual_simulation(algorithm, network):
     env     = _build_env(network, algorithm, results)
     
     
-    viz = Visualizer(network, cell_radius=130, signal_radius=210)
+    viz = Visualizer(network, cell_radius=130, signal_radius=250)
     
     def sim_step():
         next_time = env.now + 1
