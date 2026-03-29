@@ -164,7 +164,4 @@ class Network:
         return (
             f"Network(bs={len(self.base_stations)}, "
             f"ms={len(self.mobile_stations)}, bounds={self.bounds})"
-        )
-
-
-            
+        )   

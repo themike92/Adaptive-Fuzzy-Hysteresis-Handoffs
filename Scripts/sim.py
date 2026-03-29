@@ -20,7 +20,7 @@ RSS_DROP_THRESHOLD = -77
 
 # Simulation defaults
 SIM_DURATION = 100
-SIM_INTERVAL = 20
+SIM_INTERVAL = 50
 
 def ms_process(env, ms, network, algorithm, results):
     while True:
