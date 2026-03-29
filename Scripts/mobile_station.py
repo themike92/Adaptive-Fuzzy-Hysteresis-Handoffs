@@ -27,6 +27,8 @@ class MobileStation:
             weights=[0.05, 0.2, 0.4, 0.35]
         )[0]
         
+        # {bs_id: rss_value}, refreshed each time step
+        self.rss_cache = {}  
         
         #determine the direction of the MS (radians)
         self.direction = random.uniform(0, 2 * math.pi)  

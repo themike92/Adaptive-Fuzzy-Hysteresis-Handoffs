@@ -3,9 +3,9 @@ import random
 import math
 
 # Fuzzy scoring thresholds
-RSS_THRESHOLDS  = {"low": -90, "high": -70}   # dBm
-SNR_THRESHOLDS  = {"low": 5,   "high": 15}    # dB
-LOAD_THRESHOLDS = {"low": 40,  "high": 70}    # % (lower load = better score)
+RSS_THRESHOLDS  = {"low": -65, "high": -50}   # dBm
+SNR_THRESHOLDS  = {"low": 30,  "high": 45}    # dB  (SNR = RSS - noise_floor(-100), so range is ~35-55)
+LOAD_THRESHOLDS = {"low": 40,  "high": 70}    # % (unchanged, these were already reasonable)
  
 # FFDS weights 
 FFDS_WEIGHTS = {"rss": 0.4, "snr": 0.35, "load": 0.25}
@@ -126,7 +126,8 @@ class BaseStation:
         rss = self.power - path_loss - congestion_penalty + noise
         return rss
     
-    
+    def get_cached_rss(self, ms):
+        return ms.rss_cache.get(self.id, float('-inf'))
     
     #Calculcate the SNR at the MSs location
     #This is where the noise floor is used
@@ -140,8 +141,8 @@ class BaseStation:
     #Returns a value in [0, 1]. higher is better. Load score is inverted since for that lower is better
     def calculate_ffds(self, ms):
        
-        rss  = self.calculate_rss(ms)
-        snr  = self.calculate_snr(ms)
+        rss  = self.get_cached_rss(ms)   
+        snr  = rss - self.noise_floor    
         load = self.get_load()
  
         rss_score  = fuzzy_score(rss,  RSS_THRESHOLDS["low"],  RSS_THRESHOLDS["high"],  invert=False)

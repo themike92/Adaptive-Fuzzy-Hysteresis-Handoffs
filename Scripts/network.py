@@ -28,13 +28,13 @@ class Network:
  
         # Predefined base station configurations
         configs = [
-            {"power": 25, "noise": 2.2, "congestion": 0.5, "capacity": 17},  
-            {"power": 27, "noise": 1.8, "congestion": 0.5, "capacity": 20},  
-            {"power": 22, "noise": 2.5, "congestion": 0.6, "capacity": 18},  
-            {"power": 25, "noise": 1.5, "congestion": 0.7, "capacity": 19},  
-            {"power": 20, "noise": 4.0, "congestion": 0.4, "capacity": 17},  
-            {"power": 23, "noise": 3.0, "congestion": 0.5, "capacity": 20},  
-            {"power": 19, "noise": 2.7, "congestion": 0.3, "capacity": 18},  
+            {"power": 27, "noise": 2.2, "congestion": 0.5, "capacity": 17},  
+            {"power": 30, "noise": 1.8, "congestion": 0.5, "capacity": 20},  
+            {"power": 24, "noise": 2.5, "congestion": 0.6, "capacity": 18},  
+            {"power": 27, "noise": 1.5, "congestion": 0.7, "capacity": 19},  
+            {"power": 23, "noise": 4.0, "congestion": 0.4, "capacity": 17},  
+            {"power": 25, "noise": 3.0, "congestion": 0.5, "capacity": 20},  
+            {"power": 22, "noise": 2.7, "congestion": 0.3, "capacity": 18},  
         ]
 
         for i, (x, y) in enumerate(centers):
@@ -100,10 +100,8 @@ class Network:
         best_rss = float('-inf')  # start at negative infinity so any real RSS beats it
 
         for bs in self.base_stations:
-            distance = math.sqrt((bs.x - ms.x)**2 + (bs.y - ms.y)**2)
-            
-            if distance > bs.coverage_radius:
-                continue  # MS is outside this BS's range, skip it
+            if bs.calculate_distance(ms) > bs.coverage_radius:
+                continue
                 
             rss = bs.calculate_rss(ms)
             if rss > best_rss:
@@ -164,4 +162,4 @@ class Network:
         return (
             f"Network(bs={len(self.base_stations)}, "
             f"ms={len(self.mobile_stations)}, bounds={self.bounds})"
-        )   
+        )

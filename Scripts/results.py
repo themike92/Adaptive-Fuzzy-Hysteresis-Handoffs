@@ -102,9 +102,9 @@ class Results:
             print(f"  MS-{ms.id:<4} ({speed}){'':<{12-len(speed)}} {len(ms_handoffs):<12} {ms.drop_count:<10} {avg:<12.2f} {q}")
         
         print(f"\n  Drops by Speed Category")
-        print(f"  {'-'*40}")
-        print(f"  {'Speed':<14} {'# of MS':<10} {'Drops'}")
-        print(f"  {'-'*40}")
+        print(f"  {'-'*50}")
+        print(f"  {'Speed':<14} {'# of MS':<10} {'Handoffs':<12} {'Drops'}")
+        print(f"  {'-'*50}")
 
         speed_categories = ["stationary", "slow", "fast", "very_fast"]
         for category in speed_categories:
@@ -112,9 +112,10 @@ class Results:
             if not category_ms:
                 continue
             total_drops = sum(ms.drop_count for ms in category_ms)
-            print(f"  {category:<14} {len(category_ms):<10} {total_drops}")
+            total_handoffs = sum(ms.handoff_count for ms in category_ms)
+            print(f"  {category:<14} {len(category_ms):<10} {total_handoffs:<12} {total_drops}")
 
-        print(f"\n{'='*55}\n")
+        print(f"\n{'='*65}\n")
 
         if self.load_log:
             print(f"\n  Cell Load Summary")
