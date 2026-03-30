@@ -5,13 +5,13 @@ import math
 # Fuzzy scoring thresholds
 RSS_THRESHOLDS  = {"low": -65, "high": -50}   # dBm
 SNR_THRESHOLDS  = {"low": 15,  "high": 30}    # dB  (SNR = RSS - noise_floor(-100), so range is ~35-55)
-LOAD_THRESHOLDS = {"low": 40,  "high": 70}    # % (unchanged, these were already reasonable)
+LOAD_THRESHOLDS = {"low": 45, "high": 75}    # %
  
 # FFDS weights 
-FFDS_WEIGHTS = {"rss": 0.4, "snr": 0.35, "load": 0.25}
+FFDS_WEIGHTS = {"rss": 0.70, "snr": 0.12, "load": 0.18}
 #These thresholds and weights can be adjusted if needed
 
-REFERENCE_LOAD = 20
+REFERENCE_LOAD = 22
 
 #Returns a fuzzy score (0.0 to 1.0) for a given metric value based on defined thresholds
 #Value = the measured metric value (RSS, SNR, load)
@@ -46,7 +46,7 @@ class BaseStation:
         self.congestion = congestion
         
         #minimum guaranteed level of noise that exists for each BS
-        self.noise_floor  = -100
+        self.noise_floor  = -95
 
         #List of mobile stations currently connected to this base station
         self.active_calls = []
@@ -56,6 +56,8 @@ class BaseStation:
 
     #add an MS to the list of active calls connected to the BS
     def add_call(self, ms):
+        if len(self.active_calls) >= REFERENCE_LOAD:
+            return False  # refuse connection, MS stays unconnected or tries next BS
         self.active_calls.append(ms)
         return True
     
@@ -69,7 +71,7 @@ class BaseStation:
         return False
        
     
-    #Return current occupancy as a percentage (0–100).
+    #Return current occupancy
     def get_load(self):
         return (len(self.active_calls) / REFERENCE_LOAD) * 100
 
@@ -103,11 +105,9 @@ class BaseStation:
     def calculate_snr(self, ms):
         #SNR = RSS − noise_floor
 
-        # noise floor rises with congestion
-        effective_noise_floor = self.noise_floor + (self.get_load() * 0.27)
-        return self.calculate_rss(ms) - effective_noise_floor
-    
-    
+        cached_rss = self.get_cached_rss(ms)
+        effective_noise_floor = self.noise_floor + (self.get_load() * 0.2)
+        return cached_rss - effective_noise_floor
     
     #Calculate the Full Fuzzy Decision Score for this BS
     #Returns a value in [0, 1]. higher is better. Load score is inverted since for that lower is better

@@ -18,10 +18,18 @@ class MobileStation:
         self.id = id
         self.bounds = bounds
 
-        #initial random position and speed
+        #initial random grid position and speed
+        cols = 8
+        row  = id // cols
+        col  = id % cols
+
         #make sure the MS start in the range of the BSs
-        self.x = random.randint(bounds[0], bounds[1]) 
-        self.y = random.randint(bounds[2], bounds[3])
+        x_step = (bounds[1] - bounds[0]) / cols
+        y_step = (bounds[3] - bounds[2]) / cols
+        
+        self.x = bounds[0] + col * x_step + random.uniform(-20, 20)
+        self.y = bounds[2] + row * y_step + random.uniform(-20, 20)
+        
         self.speed = random.choices(
             SPEEDS,
             weights=[0.05, 0.2, 0.4, 0.35]

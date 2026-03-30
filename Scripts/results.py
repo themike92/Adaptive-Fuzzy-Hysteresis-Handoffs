@@ -18,7 +18,7 @@ class Results:
         self.rss_log.append((time, ms.id, rss))
         
     def record_load(self, time, bs):
-        self.load_log.append((time, bs.id, bs.get_cell_load()))
+        self.load_log.append((time, bs.id, bs.get_load()))
 
     def record_snr(self, time, ms, snr):
         self.snr_log.append((time, ms.id, snr))
@@ -90,11 +90,11 @@ class Results:
             if ms_rss:
                 avg     = sum(ms_rss) / len(ms_rss)
                 avg_str = f"{avg:.2f}"
-                if avg >= -40:
+                if avg >= -55:
                     q = "Excellent"
-                elif avg >= -50:
+                elif avg >= -62:
                     q = "Good"
-                elif avg >= -60:
+                elif avg >= -68:
                     q = "Fair"
                 else:
                     q = "Poor"
