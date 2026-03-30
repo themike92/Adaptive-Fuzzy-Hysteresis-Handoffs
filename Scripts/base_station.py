@@ -4,7 +4,7 @@ import math
 
 # Fuzzy scoring thresholds
 RSS_THRESHOLDS  = {"low": -65, "high": -50}   # dBm
-SNR_THRESHOLDS  = {"low": 30,  "high": 45}    # dB  (SNR = RSS - noise_floor(-100), so range is ~35-55)
+SNR_THRESHOLDS  = {"low": 15,  "high": 30}    # dB  (SNR = RSS - noise_floor(-100), so range is ~35-55)
 LOAD_THRESHOLDS = {"low": 40,  "high": 70}    # % (unchanged, these were already reasonable)
  
 # FFDS weights 
@@ -72,33 +72,6 @@ class BaseStation:
     #Return current occupancy as a percentage (0–100).
     def get_load(self):
         return (len(self.active_calls) / REFERENCE_LOAD) * 100
-    
-
-    #check if the BS is overloaded (at or above capacity)
-    # def is_overloaded(self):
-    #     return len(self.active_calls) >= self.max_capacity
-    
-    # #when BS is overloaded, drop weakest call
-    # def drop_weakest_call(self):
-    #     if not self.is_overloaded():
-    #         return None
-        
-    #     # find the MS with the worst signal on this BS
-    #     weakest_ms  = None
-    #     weakest_rss = float('inf')
-        
-    #     for ms in self.active_calls:
-    #         rss = self.calculate_rss(ms)
-    #         if rss < weakest_rss:
-    #             weakest_rss = rss
-    #             weakest_ms  = ms
-        
-    #     if weakest_ms:
-    #         self.remove_call(weakest_ms)
-    #         weakest_ms.connected_bs = None
-    #         weakest_ms.call_dropped = True
-        
-    #     return weakest_ms
 
 
     #Euclidean distance between the BS and a given MS
@@ -139,15 +112,14 @@ class BaseStation:
     #Calculate the Full Fuzzy Decision Score for this BS
     #Returns a value in [0, 1]. higher is better. Load score is inverted since for that lower is better
     def calculate_ffds(self, ms):
-       
-        rss  = self.get_cached_rss(ms)   
-        snr  = rss - self.noise_floor    
+        rss  = self.get_cached_rss(ms)
+        snr  = self.calculate_snr(ms)   # use dynamic SNR not static noise_floor
         load = self.get_load()
- 
+
         rss_score  = fuzzy_score(rss,  RSS_THRESHOLDS["low"],  RSS_THRESHOLDS["high"],  invert=False)
         snr_score  = fuzzy_score(snr,  SNR_THRESHOLDS["low"],  SNR_THRESHOLDS["high"],  invert=False)
         load_score = fuzzy_score(load, LOAD_THRESHOLDS["low"], LOAD_THRESHOLDS["high"], invert=True)
- 
+
         ffds = (
             FFDS_WEIGHTS["rss"]  * rss_score +
             FFDS_WEIGHTS["snr"]  * snr_score +

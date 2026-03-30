@@ -107,13 +107,14 @@ class Network:
     
     
     #returns a list of all the neighboring BSs to a given BS
-    def get_neighbor_stations(self, bs):
+    def get_neighbor_stations(self, bs, ms=None):
         neighbors = []
-    
         for b in self.base_stations:
-            if b.id != bs.id:
-                neighbors.append(b)
-        
+            if b.id == bs.id:
+                continue
+            if ms and b.calculate_distance(ms) > b.coverage_radius:
+                continue  # skip BSs out of range
+            neighbors.append(b)
         return neighbors
     
     

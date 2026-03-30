@@ -67,11 +67,11 @@ class Results:
             print(f"  Average RSS      : {avg_rss:.2f} dBm")
             
             # call quality based on average RSS
-            if avg_rss >= -40:
+            if avg_rss >= -55:
                 quality = "Excellent"
-            elif avg_rss >= -50:
+            elif avg_rss >= -62:
                 quality = "Good"
-            elif avg_rss >= -60:
+            elif avg_rss >= -68:
                 quality = "Fair"
             else:
                 quality = "Poor"
