@@ -16,7 +16,8 @@ H_MAX   = 12            # maximum margin so it never gets too large
 K       = 0.08          # sensitivity constant, controls how much speed affects the margin
 
 # Drop threshold, in dBm
-RSS_DROP_THRESHOLD = -75
+RSS_DROP_THRESHOLD = -78
+SNR_DROP_THRESHOLD = 5
 
 # Simulation defaults
 SIM_DURATION = 80
@@ -207,8 +208,11 @@ def check_call_drop(ms, curr_time, results):
     if results:
         results.record_rss(curr_time, ms, curr_rss)
         results.record_snr(curr_time, ms, curr_snr)
-    
-    if curr_rss < RSS_DROP_THRESHOLD:
+
+    rss_drop        = curr_rss < RSS_DROP_THRESHOLD
+    snr_drop        = curr_snr < SNR_DROP_THRESHOLD
+
+    if rss_drop or snr_drop:
         ms.connected_bs.remove_call(ms)
         ms.connected_bs = None
         ms.call_dropped = True
@@ -216,9 +220,14 @@ def check_call_drop(ms, curr_time, results):
         ms.drop_flash = 2
         ms._drop_flash_set = True
         
+        if rss_drop:
+            reason = "rss"
+        elif snr_drop:
+            reason = "snr"
+
         if results:
-            results.record_call_drop(curr_time, ms, reason="rss")
-            
+            results.record_call_drop(curr_time, ms, reason)
+
         return True
 
     return False

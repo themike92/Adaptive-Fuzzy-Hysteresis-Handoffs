@@ -4,7 +4,7 @@
 import os
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use('Agg')  # non-interactive backend so graphs save without opening windows
+#matplotlib.use('Agg')  # non-interactive backend so graphs save without opening windows
 
 GRAPHS_DIR = os.path.join(os.path.dirname(__file__), "graphs")
 COLORS     = {
@@ -183,12 +183,19 @@ def plot_drops_by_speed(all_results, mobile_stations):
 def generate_all_graphs(all_results, mobile_stations):
     ensure_graphs_dir()
     print("\nGenerating graphs...")
-
+    
+    # switch to non-interactive backend just for saving
+    original_backend = matplotlib.get_backend()
+    matplotlib.use('Agg')
+    
     plot_total_handoffs(all_results)
     plot_ping_pong(all_results)
     plot_call_drops(all_results)
     plot_rss_over_time(all_results)
     plot_snr_over_time(all_results)
     plot_drops_by_speed(all_results, mobile_stations)
-
+    
+    # restore original backend so visual.py still works
+    matplotlib.use(original_backend)
+    
     print(f"\nAll graphs saved to /graphs folder.")

@@ -70,8 +70,7 @@ class BaseStation:
             self.active_calls.remove(ms)
             return True
         return False
-    
-    
+       
     
     #Return current occupancy as a percentage (0–100).
     def get_cell_load(self):
@@ -133,7 +132,10 @@ class BaseStation:
     #This is where the noise floor is used
     def calculate_snr(self, ms):
         #SNR = RSS − noise_floor
-        return self.calculate_rss(ms) - self.noise_floor
+
+        # noise floor rises with congestion
+        effective_noise_floor = self.noise_floor + (self.get_load() * 0.2)
+        return self.calculate_rss(ms) - effective_noise_floor
     
     
     

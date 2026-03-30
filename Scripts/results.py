@@ -55,14 +55,14 @@ class Results:
         print(f"  Total call drops : {len(self.call_drops)}")
         print(f"  Ping-pong events : {len(self.ping_pongs)}")
 
-        rss_drops      = [d for d in self.call_drops if d[2] == "rss"]
-        capacity_drops = [d for d in self.call_drops if d[2] == "capacity"]
-        unknown_drops  = [d for d in self.call_drops if d[2] == "unknown"]
+        rss_drops        = [d for d in self.call_drops if d[2] == "rss"]
+        snr_drops        = [d for d in self.call_drops if d[2] == "snr"]
+        capacity_drops   = [d for d in self.call_drops if d[2] == "capacity"]
 
         print(f"  Total call drops : {len(self.call_drops)}")
-        print(f"    - RSS drops    : {len(rss_drops)}")
+        print(f"    - RSS          : {len(rss_drops)}")
+        print(f"    - SNR          : {len(snr_drops)}")
         print(f"    - Capacity     : {len(capacity_drops)}")
-        print(f"    - Other        : {len(unknown_drops)}")
         
         if self.rss_log:
             avg_rss = sum(r[2] for r in self.rss_log) / len(self.rss_log)
@@ -87,23 +87,25 @@ class Results:
         
         for ms in mobile_stations:
             ms_handoffs = [h for h in self.handoffs if h[1] == ms.id]
-            ms_drops    = [d for d in self.call_drops if d[1] == ms.id]
             ms_rss      = [r[2] for r in self.rss_log if r[1] == ms.id]
             
-            avg = sum(ms_rss) / len(ms_rss) if ms_rss else 0
-            
-            if avg >= -40:
-                q = "Excellent"
-            elif avg >= -50:
-                q = "Good"
-            elif avg >= -60:
-                q = "Fair"
+            if ms_rss:
+                avg     = sum(ms_rss) / len(ms_rss)
+                avg_str = f"{avg:.2f}"
+                if avg >= -40:
+                    q = "Excellent"
+                elif avg >= -50:
+                    q = "Good"
+                elif avg >= -60:
+                    q = "Fair"
+                else:
+                    q = "Poor"
             else:
-                q = "Poor"
-            
+                avg_str = "N/A"
+                q       = "No data"
             
             speed = ms.get_speed_category()
-            print(f"  MS-{ms.id:<4} ({speed}){'':<{12-len(speed)}} {len(ms_handoffs):<12} {ms.drop_count:<10} {avg:<12.2f} {q}")
+            print(f"  MS-{ms.id:<4} ({speed}){'':<{12-len(speed)}} {len(ms_handoffs):<12} {ms.drop_count:<10} {avg_str:<12} {q}")
         
         print(f"\n  Drops by Speed Category")
         print(f"  {'-'*50}")

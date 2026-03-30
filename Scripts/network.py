@@ -28,13 +28,13 @@ class Network:
  
         # Predefined base station configurations
         configs = [
-            {"power": 27, "noise": 2.2, "congestion": 0.5, "capacity": 17},  
-            {"power": 30, "noise": 1.8, "congestion": 0.5, "capacity": 20},  
-            {"power": 24, "noise": 2.5, "congestion": 0.6, "capacity": 18},  
-            {"power": 27, "noise": 1.5, "congestion": 0.7, "capacity": 19},  
-            {"power": 23, "noise": 4.0, "congestion": 0.4, "capacity": 17},  
-            {"power": 25, "noise": 3.0, "congestion": 0.5, "capacity": 20},  
-            {"power": 22, "noise": 2.7, "congestion": 0.3, "capacity": 18},  
+            {"power": 25, "noise": 2.2, "congestion": 0.5, "capacity": 14},
+            {"power": 27, "noise": 1.8, "congestion": 0.5, "capacity": 20},
+            {"power": 22, "noise": 2.5, "congestion": 0.6, "capacity": 15},
+            {"power": 25, "noise": 1.5, "congestion": 0.7, "capacity": 20},
+            {"power": 20, "noise": 4.0, "congestion": 0.4, "capacity": 14},
+            {"power": 23, "noise": 3.0, "congestion": 0.5, "capacity": 20},
+            {"power": 19, "noise": 2.7, "congestion": 0.3, "capacity": 15},
         ]
 
         for i, (x, y) in enumerate(centers):
