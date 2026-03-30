@@ -11,7 +11,7 @@ LOAD_THRESHOLDS = {"low": 40,  "high": 70}    # % (unchanged, these were already
 FFDS_WEIGHTS = {"rss": 0.4, "snr": 0.35, "load": 0.25}
 #These thresholds and weights can be adjusted if needed
 
-
+REFERENCE_LOAD = 20
 
 #Returns a fuzzy score (0.0 to 1.0) for a given metric value based on defined thresholds
 #Value = the measured metric value (RSS, SNR, load)
@@ -33,7 +33,7 @@ def fuzzy_score(value, low_thresh, high_thresh, invert=False):
 
 
 class BaseStation:
-    def __init__(self, id, x, y, power, noise, congestion, max_capacity, coverage_radius):
+    def __init__(self, id, x, y, power, noise, congestion, coverage_radius):
         #unique identifier for the base station
         self.id = id
 
@@ -44,7 +44,6 @@ class BaseStation:
         self.power = power  #in dBm
         self.noise = noise  
         self.congestion = congestion
-        self.max_capacity = max_capacity #max number of simultaneous calls this base station can handle
         
         #minimum guaranteed level of noise that exists for each BS
         self.noise_floor  = -100
@@ -57,10 +56,8 @@ class BaseStation:
 
     #add an MS to the list of active calls connected to the BS
     def add_call(self, ms):
-        if len(self.active_calls) < self.max_capacity:
-            self.active_calls.append(ms)
-            return True
-        return False
+        self.active_calls.append(ms)
+        return True
     
     
 
@@ -73,35 +70,35 @@ class BaseStation:
        
     
     #Return current occupancy as a percentage (0–100).
-    def get_cell_load(self):
-        return (len(self.active_calls) / self.max_capacity) * 100
+    def get_load(self):
+        return (len(self.active_calls) / REFERENCE_LOAD) * 100
     
 
     #check if the BS is overloaded (at or above capacity)
-    def is_overloaded(self):
-        return len(self.active_calls) >= self.max_capacity
+    # def is_overloaded(self):
+    #     return len(self.active_calls) >= self.max_capacity
     
-    #when BS is overloaded, drop weakest call
-    def drop_weakest_call(self):
-        if not self.is_overloaded():
-            return None
+    # #when BS is overloaded, drop weakest call
+    # def drop_weakest_call(self):
+    #     if not self.is_overloaded():
+    #         return None
         
-        # find the MS with the worst signal on this BS
-        weakest_ms  = None
-        weakest_rss = float('inf')
+    #     # find the MS with the worst signal on this BS
+    #     weakest_ms  = None
+    #     weakest_rss = float('inf')
         
-        for ms in self.active_calls:
-            rss = self.calculate_rss(ms)
-            if rss < weakest_rss:
-                weakest_rss = rss
-                weakest_ms  = ms
+    #     for ms in self.active_calls:
+    #         rss = self.calculate_rss(ms)
+    #         if rss < weakest_rss:
+    #             weakest_rss = rss
+    #             weakest_ms  = ms
         
-        if weakest_ms:
-            self.remove_call(weakest_ms)
-            weakest_ms.connected_bs = None
-            weakest_ms.call_dropped = True
+    #     if weakest_ms:
+    #         self.remove_call(weakest_ms)
+    #         weakest_ms.connected_bs = None
+    #         weakest_ms.call_dropped = True
         
-        return weakest_ms
+    #     return weakest_ms
 
 
     #Euclidean distance between the BS and a given MS
@@ -134,7 +131,7 @@ class BaseStation:
         #SNR = RSS − noise_floor
 
         # noise floor rises with congestion
-        effective_noise_floor = self.noise_floor + (self.get_load() * 0.2)
+        effective_noise_floor = self.noise_floor + (self.get_load() * 0.27)
         return self.calculate_rss(ms) - effective_noise_floor
     
     
@@ -157,10 +154,6 @@ class BaseStation:
             FFDS_WEIGHTS["load"] * load_score
         )
         return ffds
-    
-    def get_load(self):
-        return (len(self.active_calls) / self.max_capacity) * 100
-    
     
     #helper function that acts as print(bs) to show all the info regarding this BS (special modifiable python function)
     def __repr__(self):

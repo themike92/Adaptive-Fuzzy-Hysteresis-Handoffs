@@ -57,12 +57,10 @@ class Results:
 
         rss_drops        = [d for d in self.call_drops if d[2] == "rss"]
         snr_drops        = [d for d in self.call_drops if d[2] == "snr"]
-        capacity_drops   = [d for d in self.call_drops if d[2] == "capacity"]
 
         print(f"  Total call drops : {len(self.call_drops)}")
         print(f"    - RSS          : {len(rss_drops)}")
         print(f"    - SNR          : {len(snr_drops)}")
-        print(f"    - Capacity     : {len(capacity_drops)}")
         
         if self.rss_log:
             avg_rss = sum(r[2] for r in self.rss_log) / len(self.rss_log)
@@ -108,18 +106,23 @@ class Results:
             print(f"  MS-{ms.id:<4} ({speed}){'':<{12-len(speed)}} {len(ms_handoffs):<12} {ms.drop_count:<10} {avg_str:<12} {q}")
         
         print(f"\n  Drops by Speed Category")
-        print(f"  {'-'*50}")
-        print(f"  {'Speed':<14} {'# of MS':<10} {'Handoffs':<12} {'Drops'}")
-        print(f"  {'-'*50}")
+        print(f"  {'-'*65}")
+        print(f"  {'Speed':<14} {'# of MS':<10} {'Handoffs':<12} {'RSS Drops':<12} {'SNR Drops':<12} {'Total'}")
+        print(f"  {'-'*65}")
 
         speed_categories = ["stationary", "slow", "fast", "very_fast"]
         for category in speed_categories:
             category_ms = [ms for ms in mobile_stations if ms.get_speed_category() == category]
             if not category_ms:
                 continue
-            total_drops = sum(ms.drop_count for ms in category_ms)
+            
+            ms_ids         = [ms.id for ms in category_ms]
             total_handoffs = sum(ms.handoff_count for ms in category_ms)
-            print(f"  {category:<14} {len(category_ms):<10} {total_handoffs:<12} {total_drops}")
+            rss_drops      = len([d for d in self.call_drops if d[1] in ms_ids and d[2] == "rss"])
+            snr_drops      = len([d for d in self.call_drops if d[1] in ms_ids and d[2] == "snr"])
+            total_drops    = rss_drops + snr_drops
+            
+            print(f"  {category:<14} {len(category_ms):<10} {total_handoffs:<12} {rss_drops:<12} {snr_drops:<12} {total_drops}")
 
         print(f"\n{'='*65}\n")
 
