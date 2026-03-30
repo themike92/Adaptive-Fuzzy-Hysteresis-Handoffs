@@ -9,18 +9,18 @@ from visual import Visualizer
 from results import Results
 
 #Hysteresis constants. All H values are in dBm
-H_FIXED = 8             # fixed margin used by the baseline algorithm
+H_FIXED = 10             # fixed margin used by the baseline algorithm
 H_DEF   = 8             # default margin for adaptive and fuzzy algorithms
 H_MIN   = 1             # minimum margin so it never gets too small
-H_MAX   = 10            # maximum margin so it never gets too large
-K       = 0.07          # sensitivity constant, controls how much speed affects the margin
+H_MAX   = 12            # maximum margin so it never gets too large
+K       = 0.08          # sensitivity constant, controls how much speed affects the margin
 
 # Drop threshold, in dBm
 RSS_DROP_THRESHOLD = -76
 SNR_DROP_THRESHOLD = 6
 
 # Simulation defaults
-SIM_DURATION = 80
+SIM_DURATION = 50
 SIM_INTERVAL = 50
 
 def ms_process(env, ms, network, algorithm, results):
@@ -210,12 +210,15 @@ def check_call_drop(ms, curr_time, results):
     curr_rss = ms.connected_bs.get_cached_rss(ms)
     curr_snr = ms.connected_bs.calculate_snr(ms)
 
+    # if curr_snr < SNR_DROP_THRESHOLD:
+    #     print(f"SNR DROP MS-{ms.id} rss={curr_rss:.1f} snr={curr_snr:.1f} load={ms.connected_bs.get_load():.1f}%")
+
     if results:
         results.record_rss(curr_time, ms, curr_rss)
         results.record_snr(curr_time, ms, curr_snr)
 
     rss_drop        = curr_rss < RSS_DROP_THRESHOLD
-    snr_drop        = curr_snr < SNR_DROP_THRESHOLD
+    snr_drop        = curr_snr < SNR_DROP_THRESHOLD and ms.connected_bs.get_load() > 65
 
     if rss_drop or snr_drop:
         ms.connected_bs.remove_call(ms)
@@ -270,7 +273,14 @@ def _build_env(network, algorithm, results):
     for ms in network.mobile_stations:
         env.process(ms_process(env, ms, network, algorithm, results))
     
-    #env.process(bs_management_process(env, network, results))
+    def load_logger(env):
+        while True:
+            for bs in network.base_stations:
+                if results:
+                    results.record_load(env.now, bs)
+            yield env.timeout(1)
+
+    env.process(load_logger(env))
     return env
 
 def run_all_simulations(network):

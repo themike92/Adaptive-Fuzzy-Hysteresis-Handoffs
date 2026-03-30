@@ -116,9 +116,9 @@ def plot_rss_over_time(all_results):
             time_rss.setdefault(time, []).append(rss)
 
         times   = sorted(time_rss.keys())
-        avg_rss = [sum(time_rss[t]) / len(time_rss[t]) for t in times]
-
-        ax.plot(times, avg_rss, label=alg, color=COLORS[alg], linewidth=1.5)
+        avg_rss   = [sum(time_rss[t]) / len(time_rss[t]) for t in times]
+        smoothed  = smooth(avg_rss, window=8)
+        ax.plot(times, smoothed, label=alg, color=COLORS[alg], linewidth=2)
 
     ax.legend(facecolor='#16213e', edgecolor='#4a9eff', labelcolor='white')
     apply_dark_style(ax, "Average RSS Over Time", "Time Step", "Average RSS (dBm)")
@@ -142,7 +142,8 @@ def plot_snr_over_time(all_results):
         times   = sorted(time_snr.keys())
         avg_snr = [sum(time_snr[t]) / len(time_snr[t]) for t in times]
 
-        ax.plot(times, avg_snr, label=alg, color=COLORS[alg], linewidth=1.5)
+        smoothed  = smooth(avg_snr, window=8)
+        ax.plot(times, smoothed, label=alg, color=COLORS[alg], linewidth=2)
 
     ax.legend(facecolor='#16213e', edgecolor='#4a9eff', labelcolor='white')
     apply_dark_style(ax, "Average SNR Over Time", "Time Step", "Average SNR (dB)")
@@ -178,6 +179,35 @@ def plot_drops_by_speed(all_results, mobile_stations):
     apply_dark_style(ax, "Call Drops by Speed Category", "Speed Category", "Drop Count")
     save_fig("6_drops_by_speed.png")
 
+def plot_handoff_delay(all_results):
+    fig, ax = plt.subplots(figsize=(10, 5))
+    fig.patch.set_facecolor('#1a1a2e')
+
+    for alg in ALGORITHMS:
+        handoffs = all_results[alg].handoffs
+        if not handoffs:
+            continue
+
+        # group handoffs by time step
+        time_counts = {}
+        for time, ms_id, old_bs, new_bs in handoffs:
+            time_counts[time] = time_counts.get(time, 0) + 1
+
+        times  = sorted(time_counts.keys())
+        counts = [time_counts[t] for t in times]
+
+        # cumulative handoffs over time
+        cumulative = []
+        total = 0
+        for c in counts:
+            total += c
+            cumulative.append(total)
+
+        ax.plot(times, cumulative, label=alg, color=COLORS[alg], linewidth=1.5)
+
+    ax.legend(facecolor='#16213e', edgecolor='#4a9eff', labelcolor='white')
+    apply_dark_style(ax, "Cumulative Handoffs Over Time", "Time Step", "Total Handoffs")
+    save_fig("7_handoff_timing.png")
 
 # Main entry point — call this from sim.py after run_all_simulations
 def generate_all_graphs(all_results, mobile_stations):
@@ -194,8 +224,18 @@ def generate_all_graphs(all_results, mobile_stations):
     plot_rss_over_time(all_results)
     plot_snr_over_time(all_results)
     plot_drops_by_speed(all_results, mobile_stations)
+    plot_handoff_delay(all_results)
     
     # restore original backend so visual.py still works
     matplotlib.use(original_backend)
     
     print(f"\nAll graphs saved to /graphs folder.")
+
+
+#HELPER
+def smooth(values, window=5):
+    smoothed = []
+    for i in range(len(values)):
+        start = max(0, i - window)
+        smoothed.append(sum(values[start:i+1]) / (i - start + 1))
+    return smoothed

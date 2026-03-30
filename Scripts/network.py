@@ -122,19 +122,16 @@ class Network:
     #Determine initial connections for all MSs at the start of the simulation
     def initial_connections(self):
         for ms in self.mobile_stations:
-            best_bs = self.find_strongest_bs(ms)
-            
-            #See if we can add the MS to the BS with the strongest signal
-            if best_bs and best_bs.add_call(ms):
-                ms.connected_bs = best_bs
-            else:
-                #BS is full, gotta try the next one
-                candidate_BSs = sorted(
-                    [bs for bs in self.base_stations 
-                    if math.sqrt((bs.x - ms.x)**2 + (bs.y - ms.y)**2) <= bs.coverage_radius],
-                    key=lambda b: b.calculate_rss(ms),
-                    reverse=True
-                )
+            candidate_BSs = sorted(
+                [bs for bs in self.base_stations 
+                if bs.calculate_distance(ms) <= bs.coverage_radius],
+                key=lambda b: b.calculate_rss(ms),
+                reverse=True
+            )
+            for bs in candidate_BSs:
+                if bs.add_call(ms):
+                    ms.connected_bs = bs
+                    break
         #If no BS is avaliable, the MS stays unconnected (nothing changes from their default value)
         
         
