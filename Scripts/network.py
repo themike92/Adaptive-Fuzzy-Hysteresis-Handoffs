@@ -5,10 +5,6 @@ import random
 from base_station import BaseStation
 from mobile_station import MobileStation
 
-#max BS capacity
-#Not used currently
-MAX_BS_CAPACITY = 20
-
 class Network:
     
     def __init__(self, bounds=(0, 1000, 0, 1000)):
@@ -28,13 +24,13 @@ class Network:
  
         # Predefined base station configurations
         configs = [
-            {"power": 27, "noise": 2.2, "congestion": 0.5, "capacity": 17},  
-            {"power": 30, "noise": 1.8, "congestion": 0.5, "capacity": 20},  
-            {"power": 24, "noise": 2.5, "congestion": 0.6, "capacity": 18},  
-            {"power": 27, "noise": 1.5, "congestion": 0.7, "capacity": 19},  
-            {"power": 23, "noise": 4.0, "congestion": 0.4, "capacity": 17},  
-            {"power": 25, "noise": 3.0, "congestion": 0.5, "capacity": 20},  
-            {"power": 22, "noise": 2.7, "congestion": 0.3, "capacity": 18},  
+            {"power": 25, "noise": 2.2, "congestion": 0.5},
+            {"power": 27, "noise": 1.8, "congestion": 0.5},
+            {"power": 22, "noise": 2.5, "congestion": 0.6},
+            {"power": 25, "noise": 1.5, "congestion": 0.7},
+            {"power": 20, "noise": 4.0, "congestion": 0.4},
+            {"power": 23, "noise": 3.0, "congestion": 0.5},
+            {"power": 19, "noise": 2.7, "congestion": 0.3},
         ]
 
         for i, (x, y) in enumerate(centers):
@@ -47,7 +43,6 @@ class Network:
                 power=config["power"],
                 noise=config["noise"],
                 congestion=config["congestion"],
-                max_capacity=config["capacity"],
                 coverage_radius=250
             )
 
@@ -112,13 +107,14 @@ class Network:
     
     
     #returns a list of all the neighboring BSs to a given BS
-    def get_neighbor_stations(self, bs):
+    def get_neighbor_stations(self, bs, ms=None):
         neighbors = []
-    
         for b in self.base_stations:
-            if b.id != bs.id:
-                neighbors.append(b)
-        
+            if b.id == bs.id:
+                continue
+            if ms and b.calculate_distance(ms) > b.coverage_radius:
+                continue  # skip BSs out of range
+            neighbors.append(b)
         return neighbors
     
     

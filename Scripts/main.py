@@ -33,10 +33,15 @@ def main():
         choice = get_user_choice()
 
         if choice == 1:
-            print("\nRunning all algorithms...")
+            print("\nRunning all algorithms (headless)...")
             reset_network(network)
             all_results = run_all_simulations(network)
             generate_all_graphs(all_results, network.mobile_stations)
+            
+            # print summary for each algorithm
+            for alg, results in all_results.items():
+                results.print_summary(network.mobile_stations)
+                
         elif choice == 2:
             reset_network(network)
             run_visual_simulation(algorithm="baseline", network=network)

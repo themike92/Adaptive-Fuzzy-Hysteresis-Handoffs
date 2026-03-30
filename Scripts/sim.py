@@ -9,14 +9,15 @@ from visual import Visualizer
 from results import Results
 
 #Hysteresis constants. All H values are in dBm
-H_FIXED = 5             # fixed margin used by the baseline algorithm
-H_DEF   = 5             # default margin for adaptive and fuzzy algorithms
+H_FIXED = 8             # fixed margin used by the baseline algorithm
+H_DEF   = 8             # default margin for adaptive and fuzzy algorithms
 H_MIN   = 1             # minimum margin so it never gets too small
-H_MAX   = 12            # maximum margin so it never gets too large
-K       = 0.08          # sensitivity constant, controls how much speed affects the margin
+H_MAX   = 10            # maximum margin so it never gets too large
+K       = 0.07          # sensitivity constant, controls how much speed affects the margin
 
 # Drop threshold, in dBm
-RSS_DROP_THRESHOLD = -75
+RSS_DROP_THRESHOLD = -76
+SNR_DROP_THRESHOLD = 6
 
 # Simulation defaults
 SIM_DURATION = 80
@@ -37,7 +38,7 @@ def ms_process(env, ms, network, algorithm, results):
                 target = adaptive_hysteresis_handoff_decision(ms, network)
 
             elif algorithm == "fuzzy":
-                pass
+                target = fuzzy_handoff_decision(ms, network)
             
             if target:
                 perform_handoff(ms, target, env.now, results)
@@ -55,29 +56,6 @@ def ms_process(env, ms, network, algorithm, results):
             
         yield env.timeout(1)
        
-       
-    #BS simpy process to check for overload and drop calls if necessary 
-def bs_management_process(env, network, results):
-
-    while True:
-        for bs in network.base_stations:
-            
-            # log load before potential drop
-            if results:
-                results.record_load(env.now, bs)
-                
-            # if still overloaded after capacity adjustment, drop weakest MS
-            if bs.is_overloaded():
-                dropped_ms = bs.drop_weakest_call()
-                
-                if dropped_ms:
-                    dropped_ms.drop_count   += 1
-                    dropped_ms.drop_flash = 2
-                
-                if dropped_ms and results:
-                    results.record_call_drop(env.now, dropped_ms, reason="capacity")
-        
-        yield env.timeout(1)
 
 #ALGORITHM 1, BASELINE
 #Decide whether to handoff using a fixed hysteresis (H_FIXED) and a basic RSS comparison
@@ -92,7 +70,7 @@ def baseline_handoff_decision(ms, network):
         return None
     
     current_rss = ms.connected_bs.get_cached_rss(ms)
-    neighboring_bss = network.get_neighbor_stations(ms.connected_bs)
+    neighboring_bss = network.get_neighbor_stations(ms.connected_bs,ms)
     
     #Find the best BS in the list of neighbors
     best_targetBS = None
@@ -106,8 +84,6 @@ def baseline_handoff_decision(ms, network):
             best_targetBS = bs
             
     return best_targetBS
-    
-    
     
     
 #ALGORITHM 2, ADAPTIVE HYSTERESIS
@@ -137,7 +113,7 @@ def adaptive_hysteresis_handoff_decision(ms, network):
     adaptive_H_margin = calculate_adaptive_H_Value(ms)
     
     current_rss = ms.connected_bs.get_cached_rss(ms) 
-    neighboring_bss = network.get_neighbor_stations(ms.connected_bs)
+    neighboring_bss = network.get_neighbor_stations(ms.connected_bs, ms)
     
     #Find the best BS in the list of neighbors
     #The RSS to beat is now using the adaptive hysteresis margin instead of the fixed value
@@ -153,17 +129,47 @@ def adaptive_hysteresis_handoff_decision(ms, network):
             
     return best_targetBS
 
-
-
-
-
 #TO DO NEXT
 #ALGORITHM 3, FUZZY QOS + ADAPTIVE HYSTERESIS
 #Calculate the FFDS for each neighboring BS, select the one with the highest score
 #Also calculate the adaptive hysteresis margin
 
+def fuzzy_handoff_decision(ms, network):
+    
+    if ms.connected_bs is None:
+        best_bs = network.find_strongest_bs(ms)
+        if best_bs and best_bs.calculate_rss(ms) > RSS_DROP_THRESHOLD:
+            best_bs.add_call(ms)
+            ms.connected_bs = best_bs
+        return None
+    
+    adaptive_H_margin = calculate_adaptive_H_Value(ms)
+    current_rss       = ms.connected_bs.get_cached_rss(ms)
+    neighboring_bss   = network.get_neighbor_stations(ms.connected_bs, ms)
 
+    # step 1 — find candidate BSs that beat the adaptive margin
+    # this is the same gate as adaptive hysteresis
+    candidates = []
+    for bs in neighboring_bss:
+        rss = bs.get_cached_rss(ms)
+        if rss > current_rss + adaptive_H_margin:
+            candidates.append(bs)
 
+    if not candidates:
+        return None
+
+    # step 2 — among candidates, pick the one with the highest FFDS score
+    # this is where fuzzy adds quality awareness over pure RSS
+    best_targetBS  = None
+    best_ffds      = -1
+
+    for bs in candidates:
+        ffds = bs.calculate_ffds(ms)
+        if ffds > best_ffds:
+            best_ffds     = ffds
+            best_targetBS = bs
+
+    return best_targetBS
 
 
 #HELPER FUNCTION: PERFORM HANDOFF
@@ -207,8 +213,11 @@ def check_call_drop(ms, curr_time, results):
     if results:
         results.record_rss(curr_time, ms, curr_rss)
         results.record_snr(curr_time, ms, curr_snr)
-    
-    if curr_rss < RSS_DROP_THRESHOLD:
+
+    rss_drop        = curr_rss < RSS_DROP_THRESHOLD
+    snr_drop        = curr_snr < SNR_DROP_THRESHOLD
+
+    if rss_drop or snr_drop:
         ms.connected_bs.remove_call(ms)
         ms.connected_bs = None
         ms.call_dropped = True
@@ -216,9 +225,14 @@ def check_call_drop(ms, curr_time, results):
         ms.drop_flash = 2
         ms._drop_flash_set = True
         
+        if rss_drop:
+            reason = "rss"
+        elif snr_drop:
+            reason = "snr"
+
         if results:
-            results.record_call_drop(curr_time, ms, reason="rss")
-            
+            results.record_call_drop(curr_time, ms, reason)
+
         return True
 
     return False
@@ -256,7 +270,7 @@ def _build_env(network, algorithm, results):
     for ms in network.mobile_stations:
         env.process(ms_process(env, ms, network, algorithm, results))
     
-    env.process(bs_management_process(env, network, results))
+    #env.process(bs_management_process(env, network, results))
     return env
 
 def run_all_simulations(network):

@@ -4,7 +4,7 @@
 import os
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use('Agg')  # non-interactive backend so graphs save without opening windows
+#matplotlib.use('Agg')  # non-interactive backend so graphs save without opening windows
 
 GRAPHS_DIR = os.path.join(os.path.dirname(__file__), "graphs")
 COLORS     = {
@@ -78,18 +78,18 @@ def plot_call_drops(all_results):
     fig, ax = plt.subplots(figsize=(8, 5))
     fig.patch.set_facecolor('#1a1a2e')
 
-    rss_drops      = [len([d for d in all_results[alg].call_drops if d[2] == "rss"])      for alg in ALGORITHMS]
-    capacity_drops = [len([d for d in all_results[alg].call_drops if d[2] == "capacity"]) for alg in ALGORITHMS]
+    rss_drops = [len([d for d in all_results[alg].call_drops if d[2] == "rss"]) for alg in ALGORITHMS]
+    snr_drops = [len([d for d in all_results[alg].call_drops if d[2] == "snr"]) for alg in ALGORITHMS]
 
-    x      = range(len(ALGORITHMS))
-    width  = 0.35
-    bars1  = ax.bar([i - width/2 for i in x], rss_drops,      width, label='RSS Drops',      color='#ff4444')
-    bars2  = ax.bar([i + width/2 for i in x], capacity_drops, width, label='Capacity Drops', color='#ffaa00')
+    x     = range(len(ALGORITHMS))
+    width = 0.35
+    bars1 = ax.bar([i - width/2 for i in x], rss_drops, width, label='RSS Drops', color='#ff4444')
+    bars2 = ax.bar([i + width/2 for i in x], snr_drops, width, label='SNR Drops', color='#ffaa00')
 
     for bar, val in zip(bars1, rss_drops):
         ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.3,
                 str(val), ha='center', va='bottom', color='white', fontsize=9)
-    for bar, val in zip(bars2, capacity_drops):
+    for bar, val in zip(bars2, snr_drops):
         ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.3,
                 str(val), ha='center', va='bottom', color='white', fontsize=9)
 
@@ -183,12 +183,19 @@ def plot_drops_by_speed(all_results, mobile_stations):
 def generate_all_graphs(all_results, mobile_stations):
     ensure_graphs_dir()
     print("\nGenerating graphs...")
-
+    
+    # switch to non-interactive backend just for saving
+    original_backend = matplotlib.get_backend()
+    matplotlib.use('Agg')
+    
     plot_total_handoffs(all_results)
     plot_ping_pong(all_results)
     plot_call_drops(all_results)
     plot_rss_over_time(all_results)
     plot_snr_over_time(all_results)
     plot_drops_by_speed(all_results, mobile_stations)
-
+    
+    # restore original backend so visual.py still works
+    matplotlib.use(original_backend)
+    
     print(f"\nAll graphs saved to /graphs folder.")
