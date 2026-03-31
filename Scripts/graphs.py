@@ -1,6 +1,6 @@
 # graphs.py
 # Generates comparison graphs for all three algorithms after run_all_simulations
-
+from base_station import RSS_THRESHOLDS, SNR_THRESHOLDS
 import os
 import matplotlib.pyplot as plt
 import matplotlib
@@ -231,6 +231,82 @@ def plot_avg_rss_comparison(all_results):
     apply_dark_style(ax, "Average RSS per Algorithm (Higher is Better)", 
                     "Algorithm", "Average RSS (dBm)")
     save_fig("8_avg_rss_comparison.png")
+    
+
+
+
+
+
+
+
+
+def plot_rss_distribution(all_results):
+    fig, ax = plt.subplots(figsize=(8, 5))
+    fig.patch.set_facecolor('#1a1a2e')
+
+    means, mins, maxs = [], [], []
+    for alg in ALGORITHMS:
+        rss_vals = [r[2] for r in all_results[alg].rss_log]
+        means.append(sum(rss_vals) / len(rss_vals))
+        mins.append(min(rss_vals))
+        maxs.append(max(rss_vals))
+
+    x = range(len(ALGORITHMS))
+    bars = ax.bar(ALGORITHMS, means, color=[COLORS[a] for a in ALGORITHMS], width=0.5)
+
+    # whiskers
+    for i, (mn, mx) in enumerate(zip(mins, maxs)):
+        ax.vlines(i, mn, mx, color='white', linewidth=1.5, alpha=0.4)
+        ax.hlines([mn, mx], i - 0.06, i + 0.06, color='white', linewidth=1.5, alpha=0.4)
+
+    # threshold lines from your constants
+    ax.axhline(RSS_THRESHOLDS["low"],  color='#ff4444', linestyle='--', linewidth=1, alpha=0.6, label='Low threshold')
+    ax.axhline(RSS_THRESHOLDS["high"], color='#44ff88', linestyle='--', linewidth=1, alpha=0.6, label='High threshold')
+
+    for bar, val in zip(bars, means):
+        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() - 1,
+                f'{val:.1f}', ha='center', va='top', color='white', fontsize=9)
+
+    ax.legend(facecolor='#16213e', edgecolor='#4a9eff', labelcolor='white')
+    apply_dark_style(ax, "RSS Distribution per Algorithm (Mean ± Range)", "Algorithm", "RSS (dBm)")
+    save_fig("4_rss_distribution.png")
+
+
+
+
+def plot_snr_distribution(all_results):
+    fig, ax = plt.subplots(figsize=(8, 5))
+    fig.patch.set_facecolor('#1a1a2e')
+
+    means, mins, maxs = [], [], []
+    for alg in ALGORITHMS:
+        snr_vals = [r[2] for r in all_results[alg].snr_log]
+        means.append(sum(snr_vals) / len(snr_vals))
+        mins.append(min(snr_vals))
+        maxs.append(max(snr_vals))
+
+    x = range(len(ALGORITHMS))
+    bars = ax.bar(ALGORITHMS, means, color=[COLORS[a] for a in ALGORITHMS], width=0.5)
+
+    # whiskers
+    for i, (mn, mx) in enumerate(zip(mins, maxs)):
+        ax.vlines(i, mn, mx, color='white', linewidth=1.5, alpha=0.4)
+        ax.hlines([mn, mx], i - 0.06, i + 0.06, color='white', linewidth=1.5, alpha=0.4)
+
+    # threshold lines from your constants
+    ax.axhline(SNR_THRESHOLDS["low"],  color='#ff4444', linestyle='--', linewidth=1, alpha=0.6, label='Low threshold')
+    ax.axhline(SNR_THRESHOLDS["high"], color='#44ff88', linestyle='--', linewidth=1, alpha=0.6, label='High threshold')
+
+    for bar, val in zip(bars, means):
+        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() - 1,
+                f'{val:.1f}', ha='center', va='top', color='white', fontsize=9)
+
+    ax.legend(facecolor='#16213e', edgecolor='#4a9eff', labelcolor='white')
+    apply_dark_style(ax, "SNR Distribution per Algorithm (Mean ± Range)", "Algorithm", "SNR (dB)")
+    save_fig("5_snr_distribution.png")
+
+
+
 
 # Main entry point — call this from sim.py after run_all_simulations
 def generate_all_graphs(all_results, mobile_stations):
@@ -249,6 +325,8 @@ def generate_all_graphs(all_results, mobile_stations):
     plot_drops_by_speed(all_results, mobile_stations)
     plot_handoff_delay(all_results)
     plot_avg_rss_comparison(all_results)
+    plot_rss_distribution(all_results)
+    plot_snr_distribution(all_results)
     
     # restore original backend so visual.py still works
     matplotlib.use(original_backend)

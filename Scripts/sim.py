@@ -1,6 +1,9 @@
 #Simulation file, uses simpy to run our simulation
 #This is where all handoff logic (baseline, adaptive, and fuzzy) will be determined and applies
 
+import random
+RANDOM_SEED = 444
+
 import simpy
 from network import Network
 from base_station import BaseStation
@@ -241,28 +244,49 @@ def check_call_drop(ms, curr_time, results):
     return False
 
 def generate_network(num_ms):
+    random.seed(RANDOM_SEED)
     network = Network()
     network.generate_base_stations()
     network.generate_mobile_stations(num_ms)
+    
+    for ms in network.mobile_stations:
+        ms.initial_x         = ms.x
+        ms.initial_y         = ms.y
+        ms.initial_speed     = ms.speed
+        ms.initial_direction = ms.direction
+        ms.initial_steps     = ms._steps_since_direction_change
+        
+        
     return network
 
 def reset_network(network):
-    # reset all BS active calls
+    random.seed(RANDOM_SEED)
+
     for bs in network.base_stations:
         bs.active_calls = []
-    
-    # reset MS connection state but keep position, speed and direction
+
     for ms in network.mobile_stations:
-        ms.connected_bs   = None
-        ms.call_dropped   = False
-        ms.drop_count     = 0
-        ms.handoff_count  = 0
-        ms.handoff_flash  = 0
-        ms.drop_flash     = 0
-        ms.prev_x         = ms.x
-        ms.prev_y         = ms.y
-        ms.next_x         = ms.x
-        ms.next_y         = ms.y
+        # reset the movement RNG to its original seed so movement is identical
+        ms.move_rng = random.Random(ms.id)
+
+        # restore full movement state to initial snapshot
+        ms.x         = ms.initial_x
+        ms.y         = ms.initial_y
+        ms.speed     = ms.initial_speed
+        ms.direction = ms.initial_direction
+        ms._steps_since_direction_change = ms.initial_steps
+
+        ms.connected_bs  = None
+        ms.call_dropped  = False
+        ms.drop_count    = 0
+        ms.handoff_count = 0
+        ms.handoff_flash = 0
+        ms.drop_flash    = 0
+        ms.prev_x        = ms.x
+        ms.prev_y        = ms.y
+        ms.next_x        = ms.x
+        ms.next_y        = ms.y
+        ms.rss_cache     = {}
 
 
 def _build_env(network, algorithm, results):
