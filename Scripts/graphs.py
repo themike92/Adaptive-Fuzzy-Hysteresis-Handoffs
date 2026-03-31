@@ -223,34 +223,63 @@ def plot_snr_distribution(all_results):
     save_fig("5_snr_distribution.png")
 
 
-# graph 6: Drops by speed category per algorithm
-def plot_drops_by_speed(all_results, mobile_stations):
+def plot_quality_distribution(all_results, mobile_stations):
     fig, ax = plt.subplots(figsize=(10, 5))
     fig.patch.set_facecolor('#1a1a2e')
 
-    speed_categories = ["stationary", "slow", "fast", "very_fast"]
-    x     = range(len(speed_categories))
-    width = 0.25
+    quality_colors = {
+        "Excellent": "#44ff88",
+        "Good":      "#4a9eff",
+        "Fair":      "#ffaa00",
+        "Poor":      "#ff4444"
+    }
 
-    for idx, alg in enumerate(ALGORITHMS):
-        drops = []
-        for category in speed_categories:
-            ms_ids       = [ms.id for ms in mobile_stations if ms.get_speed_category() == category]
-            total_drops  = len([d for d in all_results[alg].call_drops if d[1] in ms_ids])
-            drops.append(total_drops)
+    x     = range(len(ALGORITHMS))
+    width = 0.2
+    categories = ["Excellent", "Good", "Fair", "Poor"]
 
-        offset = (idx - 1) * width
-        bars   = ax.bar([i + offset for i in x], drops, width, label=alg, color=COLORS[alg])
+    for i, alg in enumerate(ALGORITHMS):
+        rss_log = all_results[alg].rss_log
 
-        for bar, val in zip(bars, drops):
-            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.2,
-                    str(val), ha='center', va='bottom', color='white', fontsize=8)
+        ms_avg_snr = {}
+        for time, ms_id, snr in all_results[alg].snr_log:
+            ms_avg_snr.setdefault(ms_id, []).append(snr)
+
+        counts = {"Excellent": 0, "Good": 0, "Fair": 0, "Poor": 0}
+        for ms in mobile_stations:
+            snrs = ms_avg_snr.get(ms.id, [])
+            if not snrs:
+                continue
+            avg = sum(snrs) / len(snrs)
+            if avg >= 67.5:
+                counts["Excellent"] += 1
+            elif avg >= 65.5:
+                counts["Good"] += 1
+            elif avg >= 63.75:
+                counts["Fair"] += 1
+            else:
+                counts["Poor"] += 1
+
+        bottom = 0
+        for category in categories:
+            val = counts[category]
+            bar = ax.bar(i, val, width=0.5, bottom=bottom,
+                        color=quality_colors[category],
+                        label=category if i == 0 else "")
+            if val > 0:
+                padding = 1.5
+
+                ax.text(i - 0.15, bottom + val - padding, str(val),
+                        ha='right', va='top',
+                        color='black', fontsize=8, fontweight='bold')
+            bottom += val
 
     ax.set_xticks(list(x))
-    ax.set_xticklabels(speed_categories)
+    ax.set_xticklabels(ALGORITHMS)
     ax.legend(facecolor='#16213e', edgecolor='#4a9eff', labelcolor='white')
-    apply_dark_style(ax, "Call Drops by Speed Category", "Speed Category", "Drop Count")
-    save_fig("6_drops_by_speed.png")
+    apply_dark_style(ax, "Call Quality Distribution per Algorithm",
+                    "Algorithm", "Number of MSs")
+    save_fig("10_quality_distribution.png")
 
 
 #graph 7: handoff delay per algorithm (cumulative handoffs over time)
@@ -351,6 +380,7 @@ def generate_all_graphs(all_results, mobile_stations):
     plot_rss_distribution(all_results)
     plot_snr_distribution(all_results)
     plot_avg_time_between_handoffs(all_results)
+    plot_quality_distribution(all_results, mobile_stations)
     
     # restore original backend so visual.py still works
     matplotlib.use(original_backend)
