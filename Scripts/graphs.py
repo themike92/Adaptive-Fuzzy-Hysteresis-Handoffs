@@ -1,24 +1,33 @@
 # graphs.py
+#Adam Tremblay - 101264116
+#Michael Roy - 
 # Generates comparison graphs for all three algorithms after run_all_simulations
+
 from base_station import RSS_THRESHOLDS, SNR_THRESHOLDS
+# uses os and matplotlib libraries to create and save graphs in a "graphs" folder.
 import os
 import matplotlib.pyplot as plt
 import matplotlib
-#matplotlib.use('Agg')  # non-interactive backend so graphs save without opening windows
 
+# graphs directory
 GRAPHS_DIR = os.path.join(os.path.dirname(__file__), "graphs")
+
+#styling constants
 COLORS     = {
     "baseline": "#4a9eff",
     "adaptive": "#bf5fff",
     "fuzzy":    "#44ff88"
 }
+
+# order of algoritm names consistent graphs
 ALGORITHMS = ["baseline", "adaptive", "fuzzy"]
 
-
+# ensure the graph directory exists before saving any grapĥs
 def ensure_graphs_dir():
     os.makedirs(GRAPHS_DIR, exist_ok=True)
 
 
+# function to save the current graph
 def save_fig(filename):
     path = os.path.join(GRAPHS_DIR, filename)
     plt.savefig(path, dpi=150, bbox_inches='tight', facecolor='#1a1a2e')
@@ -26,6 +35,7 @@ def save_fig(filename):
     print(f"  Saved: {filename}")
 
 
+# applies the dark style to each graph, witht the given title and axis labels
 def apply_dark_style(ax, title, xlabel, ylabel):
     ax.set_facecolor('#16213e')
     ax.set_title(title,  color='white', fontsize=13, pad=12)
@@ -38,7 +48,7 @@ def apply_dark_style(ax, title, xlabel, ylabel):
     ax.set_axisbelow(True)
 
 
-# 1. Total handoffs per algorithm
+# graph 1: Total handoffs per algorithm
 def plot_total_handoffs(all_results):
     fig, ax = plt.subplots(figsize=(8, 5))
     fig.patch.set_facecolor('#1a1a2e')
@@ -54,7 +64,7 @@ def plot_total_handoffs(all_results):
     save_fig("1_total_handoffs.png")
 
 
-# 2. Ping-pong rate per algorithm
+# graph 2: Ping-pong rate per algorithm
 def plot_ping_pong(all_results):
     fig, ax = plt.subplots(figsize=(8, 5))
     fig.patch.set_facecolor('#1a1a2e')
@@ -73,7 +83,7 @@ def plot_ping_pong(all_results):
     save_fig("2_ping_pong_rate.png")
 
 
-# 3. Call drops per algorithm
+# Graph 3: Call drops per algorithm
 def plot_call_drops(all_results):
     fig, ax = plt.subplots(figsize=(8, 5))
     fig.patch.set_facecolor('#1a1a2e')
@@ -100,7 +110,7 @@ def plot_call_drops(all_results):
     save_fig("3_call_drops.png")
 
 
-# 4. Average RSS over time per algorithm
+# graph 4.1: Average RSS over time per algorithm
 def plot_rss_over_time(all_results):
     fig, ax = plt.subplots(figsize=(10, 5))
     fig.patch.set_facecolor('#1a1a2e')
@@ -124,135 +134,7 @@ def plot_rss_over_time(all_results):
     apply_dark_style(ax, "Average RSS Over Time", "Time Step", "Average RSS (dBm)")
     save_fig("4_rss_over_time.png")
 
-
-# 5. Average SNR over time per algorithm
-def plot_snr_over_time(all_results):
-    fig, ax = plt.subplots(figsize=(10, 5))
-    fig.patch.set_facecolor('#1a1a2e')
-
-    for alg in ALGORITHMS:
-        snr_log = all_results[alg].snr_log
-        if not snr_log:
-            continue
-
-        time_snr = {}
-        for time, ms_id, snr in snr_log:
-            time_snr.setdefault(time, []).append(snr)
-
-        times   = sorted(time_snr.keys())
-        avg_snr = [sum(time_snr[t]) / len(time_snr[t]) for t in times]
-
-        smoothed  = smooth(avg_snr, window=8)
-        ax.plot(times, smoothed, label=alg, color=COLORS[alg], linewidth=2)
-
-    ax.legend(facecolor='#16213e', edgecolor='#4a9eff', labelcolor='white')
-    apply_dark_style(ax, "Average SNR Over Time", "Time Step", "Average SNR (dB)")
-    save_fig("5_snr_over_time.png")
-
-
-# 6. Drops by speed category per algorithm
-def plot_drops_by_speed(all_results, mobile_stations):
-    fig, ax = plt.subplots(figsize=(10, 5))
-    fig.patch.set_facecolor('#1a1a2e')
-
-    speed_categories = ["stationary", "slow", "fast", "very_fast"]
-    x     = range(len(speed_categories))
-    width = 0.25
-
-    for idx, alg in enumerate(ALGORITHMS):
-        drops = []
-        for category in speed_categories:
-            ms_ids       = [ms.id for ms in mobile_stations if ms.get_speed_category() == category]
-            total_drops  = len([d for d in all_results[alg].call_drops if d[1] in ms_ids])
-            drops.append(total_drops)
-
-        offset = (idx - 1) * width
-        bars   = ax.bar([i + offset for i in x], drops, width, label=alg, color=COLORS[alg])
-
-        for bar, val in zip(bars, drops):
-            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.2,
-                    str(val), ha='center', va='bottom', color='white', fontsize=8)
-
-    ax.set_xticks(list(x))
-    ax.set_xticklabels(speed_categories)
-    ax.legend(facecolor='#16213e', edgecolor='#4a9eff', labelcolor='white')
-    apply_dark_style(ax, "Call Drops by Speed Category", "Speed Category", "Drop Count")
-    save_fig("6_drops_by_speed.png")
-
-def plot_handoff_delay(all_results):
-    fig, ax = plt.subplots(figsize=(10, 5))
-    fig.patch.set_facecolor('#1a1a2e')
-
-    for alg in ALGORITHMS:
-        handoffs = all_results[alg].handoffs
-        if not handoffs:
-            continue
-
-        # group handoffs by time step
-        time_counts = {}
-        for time, ms_id, old_bs, new_bs in handoffs:
-            time_counts[time] = time_counts.get(time, 0) + 1
-
-        times  = sorted(time_counts.keys())
-        counts = [time_counts[t] for t in times]
-
-        # cumulative handoffs over time
-        cumulative = []
-        total = 0
-        for c in counts:
-            total += c
-            cumulative.append(total)
-
-        ax.plot(times, cumulative, label=alg, color=COLORS[alg], linewidth=1.5)
-
-    ax.legend(facecolor='#16213e', edgecolor='#4a9eff', labelcolor='white')
-    apply_dark_style(ax, "Cumulative Handoffs Over Time", "Time Step", "Total Handoffs")
-    save_fig("7_handoff_timing.png")
-
-def plot_avg_rss_comparison(all_results):
-    fig, ax = plt.subplots(figsize=(8, 5))
-    fig.patch.set_facecolor('#1a1a2e')
-
-    values = []
-    for alg in ALGORITHMS:
-        rss_log = all_results[alg].rss_log
-        if rss_log:
-            avg = sum(r[2] for r in rss_log) / len(rss_log)
-        else:
-            avg = 0
-        values.append(avg)
-
-    bars = ax.bar(ALGORITHMS, values, color=[COLORS[a] for a in ALGORITHMS], width=0.5)
-
-    for bar, val in zip(bars, values):
-        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() - 1,
-                f'{val:.2f}', ha='center', va='top', color='white', fontsize=10)
-
-    apply_dark_style(ax, "Average RSS per Algorithm (Higher is Better)", 
-                    "Algorithm", "Average RSS (dBm)")
-    save_fig("8_avg_rss_comparison.png")
-    
-
-def plot_avg_time_between_handoffs(all_results):
-    fig, ax = plt.subplots(figsize=(8, 5))
-    fig.patch.set_facecolor('#1a1a2e')
-
-    values = []
-    for alg in ALGORITHMS:
-        avg_gap = all_results[alg].avg_time_between_handoffs()
-        values.append(avg_gap)
-
-    bars = ax.bar(ALGORITHMS, values, color=[COLORS[a] for a in ALGORITHMS], width=0.5)
-
-    for bar, val in zip(bars, values):
-        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.2,
-                f'{val:.1f}', ha='center', va='bottom', color='white', fontsize=10)
-
-    apply_dark_style(ax, "Average Time Between Handoffs (Higher = More Stable)",
-                    "Algorithm", "Avg Steps Between Handoffs")
-    save_fig("9_avg_time_between_handoffs.png")
-
-
+# graph 4.2: RSS distribution per algorithm
 def plot_rss_distribution(all_results):
     fig, ax = plt.subplots(figsize=(8, 5))
     fig.patch.set_facecolor('#1a1a2e')
@@ -284,9 +166,31 @@ def plot_rss_distribution(all_results):
     apply_dark_style(ax, "RSS Distribution per Algorithm (Mean ± Range)", "Algorithm", "RSS (dBm)")
     save_fig("4_rss_distribution.png")
 
+# Graph 5.1: Average SNR over time per algorithm
+def plot_snr_over_time(all_results):
+    fig, ax = plt.subplots(figsize=(10, 5))
+    fig.patch.set_facecolor('#1a1a2e')
 
+    for alg in ALGORITHMS:
+        snr_log = all_results[alg].snr_log
+        if not snr_log:
+            continue
 
+        time_snr = {}
+        for time, ms_id, snr in snr_log:
+            time_snr.setdefault(time, []).append(snr)
 
+        times   = sorted(time_snr.keys())
+        avg_snr = [sum(time_snr[t]) / len(time_snr[t]) for t in times]
+
+        smoothed  = smooth(avg_snr, window=8)
+        ax.plot(times, smoothed, label=alg, color=COLORS[alg], linewidth=2)
+
+    ax.legend(facecolor='#16213e', edgecolor='#4a9eff', labelcolor='white')
+    apply_dark_style(ax, "Average SNR Over Time", "Time Step", "Average SNR (dB)")
+    save_fig("5_snr_over_time.png")
+    
+# graph 5.2: SNR distribution per algorithm
 def plot_snr_distribution(all_results):
     fig, ax = plt.subplots(figsize=(8, 5))
     fig.patch.set_facecolor('#1a1a2e')
@@ -319,9 +223,115 @@ def plot_snr_distribution(all_results):
     save_fig("5_snr_distribution.png")
 
 
+# graph 6: Drops by speed category per algorithm
+def plot_drops_by_speed(all_results, mobile_stations):
+    fig, ax = plt.subplots(figsize=(10, 5))
+    fig.patch.set_facecolor('#1a1a2e')
+
+    speed_categories = ["stationary", "slow", "fast", "very_fast"]
+    x     = range(len(speed_categories))
+    width = 0.25
+
+    for idx, alg in enumerate(ALGORITHMS):
+        drops = []
+        for category in speed_categories:
+            ms_ids       = [ms.id for ms in mobile_stations if ms.get_speed_category() == category]
+            total_drops  = len([d for d in all_results[alg].call_drops if d[1] in ms_ids])
+            drops.append(total_drops)
+
+        offset = (idx - 1) * width
+        bars   = ax.bar([i + offset for i in x], drops, width, label=alg, color=COLORS[alg])
+
+        for bar, val in zip(bars, drops):
+            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.2,
+                    str(val), ha='center', va='bottom', color='white', fontsize=8)
+
+    ax.set_xticks(list(x))
+    ax.set_xticklabels(speed_categories)
+    ax.legend(facecolor='#16213e', edgecolor='#4a9eff', labelcolor='white')
+    apply_dark_style(ax, "Call Drops by Speed Category", "Speed Category", "Drop Count")
+    save_fig("6_drops_by_speed.png")
 
 
-# Main entry point — call this from sim.py after run_all_simulations
+#graph 7: handoff delay per algorithm (cumulative handoffs over time)
+def plot_handoff_delay(all_results):
+    fig, ax = plt.subplots(figsize=(10, 5))
+    fig.patch.set_facecolor('#1a1a2e')
+
+    for alg in ALGORITHMS:
+        handoffs = all_results[alg].handoffs
+        if not handoffs:
+            continue
+
+        # group handoffs by time step
+        time_counts = {}
+        for time, ms_id, old_bs, new_bs in handoffs:
+            time_counts[time] = time_counts.get(time, 0) + 1
+
+        times  = sorted(time_counts.keys())
+        counts = [time_counts[t] for t in times]
+
+        # cumulative handoffs over time
+        cumulative = []
+        total = 0
+        for c in counts:
+            total += c
+            cumulative.append(total)
+
+        ax.plot(times, cumulative, label=alg, color=COLORS[alg], linewidth=1.5)
+
+    ax.legend(facecolor='#16213e', edgecolor='#4a9eff', labelcolor='white')
+    apply_dark_style(ax, "Cumulative Handoffs Over Time", "Time Step", "Total Handoffs")
+    save_fig("7_handoff_timing.png")
+
+
+# graph 8: average RSS comparison per algorithm
+def plot_avg_rss_comparison(all_results):
+    fig, ax = plt.subplots(figsize=(8, 5))
+    fig.patch.set_facecolor('#1a1a2e')
+
+    values = []
+    for alg in ALGORITHMS:
+        rss_log = all_results[alg].rss_log
+        if rss_log:
+            avg = sum(r[2] for r in rss_log) / len(rss_log)
+        else:
+            avg = 0
+        values.append(avg)
+
+    bars = ax.bar(ALGORITHMS, values, color=[COLORS[a] for a in ALGORITHMS], width=0.5)
+
+    for bar, val in zip(bars, values):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() - 1,
+                f'{val:.2f}', ha='center', va='top', color='white', fontsize=10)
+
+    apply_dark_style(ax, "Average RSS per Algorithm (Higher is Better)", 
+                    "Algorithm", "Average RSS (dBm)")
+    save_fig("8_avg_rss_comparison.png")
+    
+# graph 9: avergae best time between handoffs across all the algorithms
+def plot_avg_time_between_handoffs(all_results):
+    fig, ax = plt.subplots(figsize=(8, 5))
+    fig.patch.set_facecolor('#1a1a2e')
+
+    values = []
+    for alg in ALGORITHMS:
+        avg_gap = all_results[alg].avg_time_between_handoffs()
+        values.append(avg_gap)
+
+    bars = ax.bar(ALGORITHMS, values, color=[COLORS[a] for a in ALGORITHMS], width=0.5)
+
+    for bar, val in zip(bars, values):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.2,
+                f'{val:.1f}', ha='center', va='bottom', color='white', fontsize=10)
+
+    apply_dark_style(ax, "Average Time Between Handoffs (Higher = More Stable)",
+                    "Algorithm", "Avg Steps Between Handoffs")
+    save_fig("9_avg_time_between_handoffs.png")
+
+
+# generates all the graphs
+# Call this from sim.py after run_all_simulations
 def generate_all_graphs(all_results, mobile_stations):
     ensure_graphs_dir()
     print("\nGenerating graphs...")
@@ -349,6 +359,7 @@ def generate_all_graphs(all_results, mobile_stations):
 
 
 #HELPER
+# smoothing function for line graphs to make the trends clearer
 def smooth(values, window=5):
     smoothed = []
     for i in range(len(values)):

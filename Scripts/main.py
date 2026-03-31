@@ -1,4 +1,6 @@
-#This will call our simulation with the algorithm we want to test
+#main.py
+#Adam Tremblay - 101264116
+#Michael Roy - 
 
 from sim import run_visual_simulation, run_all_simulations, generate_network, reset_network
 from graphs import generate_all_graphs

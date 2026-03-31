@@ -1,3 +1,7 @@
+#results.py
+#Adam Tremblay - 101264116
+#Michael Roy - 
+#Collects and displays results from the simulations, located in the terminal
 class Results:
     def __init__(self, algorithm):
         self.algorithm = algorithm
