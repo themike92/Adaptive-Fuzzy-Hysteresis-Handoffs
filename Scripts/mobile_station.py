@@ -52,6 +52,7 @@ class MobileStation:
         
         #determine if the current MS has experienced a call drop 
         self.call_dropped  = False
+        self.handoff_cooldown = 0
         
         #cooldown timer to prevent excessive handoffs in succession
         self.handoff_cooldown = 0
