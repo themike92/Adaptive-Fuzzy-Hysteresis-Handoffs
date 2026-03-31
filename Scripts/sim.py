@@ -3,7 +3,9 @@
 
 import random
 #RANDOM_SEED = 42
-RANDOM_SEED = 12345
+#RANDOM_SEED = 12345
+
+RANDOM_SEED = 6767
 
 import simpy
 from network import Network
