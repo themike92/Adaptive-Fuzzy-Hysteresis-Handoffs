@@ -1,6 +1,6 @@
-# graphs.py
+#Group 6
 #Adam Tremblay - 101264116
-#Michael Roy - 
+#Michael Roy - 101260953
 # Generates comparison graphs for all three algorithms after run_all_simulations
 
 from base_station import RSS_THRESHOLDS, SNR_THRESHOLDS
