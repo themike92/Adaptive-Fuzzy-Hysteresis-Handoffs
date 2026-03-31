@@ -3,10 +3,10 @@ import random
 import math
 
 #Different speed categories for MSs
-STATIONARY = 5
+STATIONARY = 0
 SLOW = 15
-FAST = 55
-VERY_FAST = 90
+FAST = 45
+VERY_FAST = 70
 SPEEDS = [STATIONARY, SLOW, FAST, VERY_FAST]
 
 # time steps before changing direction
@@ -18,20 +18,22 @@ class MobileStation:
         self.id = id
         self.bounds = bounds
 
+        self.move_rng = random.Random(id)
         #initial random position and speed
         #make sure the MS start in the range of the BSs
-        self.x = random.randint(bounds[0], bounds[1]) 
-        self.y = random.randint(bounds[2], bounds[3])
-        self.speed = random.choices(
+        self.x = self.move_rng.randint(bounds[0], bounds[1]) 
+        self.y = self.move_rng.randint(bounds[2], bounds[3])
+        self.speed = self.move_rng.choices(
             SPEEDS,
             weights=[0.05, 0.2, 0.4, 0.35]
         )[0]
         
         # {bs_id: rss_value}, refreshed each time step
         self.rss_cache = {}  
+        self.load_cache = {}
         
         #determine the direction of the MS (radians)
-        self.direction = random.uniform(0, 2 * math.pi)  
+        self.direction = self.move_rng.uniform(0, 2 * math.pi)  
         # Internal timer for direction changes
         self._steps_since_direction_change = 0
         
@@ -90,7 +92,7 @@ class MobileStation:
         dist_from_center = math.sqrt((new_x - cx)**2 + (new_y - cy)**2)
         if dist_from_center > boundary_radius:
             angle_to_center = math.atan2(cy - self.y, cx - self.x)
-            self.direction  = angle_to_center + random.uniform(-math.pi / 4, math.pi / 4)
+            self.direction = angle_to_center + self.move_rng.uniform(-math.pi / 4, math.pi / 4)
 
             # take a step in the new direction instead of stopping
             new_x = self.x + self.speed * math.cos(self.direction) * dt
@@ -111,7 +113,7 @@ class MobileStation:
  
     #choose a new random direction and reset the step counter
     def change_direction(self):
-        self.direction = random.uniform(0, 2 * math.pi)
+        self.direction = self.move_rng.uniform(0, 2 * math.pi)
         self._steps_since_direction_change = 0
     
     #return what speed the MS is going as a string

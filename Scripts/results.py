@@ -5,6 +5,7 @@ class Results:
         self.call_drops = []    # list of (time, ms_id)
         self.rss_log    = []    # list of (time, ms_id, rss)
         self.load_log   = []    # list of (time, bs_id, load_percent)
+        self.snr_log    = []
         self.ping_pongs = []    # list of (time, ms_id)
     
     def record_handoff(self, time, ms, old_bs, new_bs):
@@ -17,7 +18,10 @@ class Results:
         self.rss_log.append((time, ms.id, rss))
         
     def record_load(self, time, bs):
-        self.load_log.append((time, bs.id, bs.get_cell_load()))
+        self.load_log.append((time, bs.id, bs.get_load()))
+
+    def record_snr(self, time, ms, snr):
+        self.snr_log.append((time, ms.id, snr))
     
     def record_ping_pong(self, time, ms):
         self.ping_pongs.append((time, ms.id))
@@ -51,25 +55,23 @@ class Results:
         print(f"  Total call drops : {len(self.call_drops)}")
         print(f"  Ping-pong events : {len(self.ping_pongs)}")
 
-        rss_drops      = [d for d in self.call_drops if d[2] == "rss"]
-        capacity_drops = [d for d in self.call_drops if d[2] == "capacity"]
-        unknown_drops  = [d for d in self.call_drops if d[2] == "unknown"]
+        rss_drops        = [d for d in self.call_drops if d[2] == "rss"]
+        snr_drops        = [d for d in self.call_drops if d[2] == "snr"]
 
         print(f"  Total call drops : {len(self.call_drops)}")
-        print(f"    - RSS drops    : {len(rss_drops)}")
-        print(f"    - Capacity     : {len(capacity_drops)}")
-        print(f"    - Other        : {len(unknown_drops)}")
+        print(f"    - RSS          : {len(rss_drops)}")
+        print(f"    - SNR          : {len(snr_drops)}")
         
         if self.rss_log:
             avg_rss = sum(r[2] for r in self.rss_log) / len(self.rss_log)
             print(f"  Average RSS      : {avg_rss:.2f} dBm")
             
             # call quality based on average RSS
-            if avg_rss >= -40:
+            if avg_rss >= -55:
                 quality = "Excellent"
-            elif avg_rss >= -50:
+            elif avg_rss >= -62:
                 quality = "Good"
-            elif avg_rss >= -60:
+            elif avg_rss >= -68:
                 quality = "Fair"
             else:
                 quality = "Poor"
@@ -83,37 +85,44 @@ class Results:
         
         for ms in mobile_stations:
             ms_handoffs = [h for h in self.handoffs if h[1] == ms.id]
-            ms_drops    = [d for d in self.call_drops if d[1] == ms.id]
             ms_rss      = [r[2] for r in self.rss_log if r[1] == ms.id]
             
-            avg = sum(ms_rss) / len(ms_rss) if ms_rss else 0
-            
-            if avg >= -40:
-                q = "Excellent"
-            elif avg >= -50:
-                q = "Good"
-            elif avg >= -60:
-                q = "Fair"
+            if ms_rss:
+                avg     = sum(ms_rss) / len(ms_rss)
+                avg_str = f"{avg:.2f}"
+                if avg >= -55:
+                    q = "Excellent"
+                elif avg >= -62:
+                    q = "Good"
+                elif avg >= -68:
+                    q = "Fair"
+                else:
+                    q = "Poor"
             else:
-                q = "Poor"
-            
+                avg_str = "N/A"
+                q       = "No data"
             
             speed = ms.get_speed_category()
-            print(f"  MS-{ms.id:<4} ({speed}){'':<{12-len(speed)}} {len(ms_handoffs):<12} {ms.drop_count:<10} {avg:<12.2f} {q}")
+            print(f"  MS-{ms.id:<4} ({speed}){'':<{12-len(speed)}} {len(ms_handoffs):<12} {ms.drop_count:<10} {avg_str:<12} {q}")
         
         print(f"\n  Drops by Speed Category")
-        print(f"  {'-'*50}")
-        print(f"  {'Speed':<14} {'# of MS':<10} {'Handoffs':<12} {'Drops'}")
-        print(f"  {'-'*50}")
+        print(f"  {'-'*65}")
+        print(f"  {'Speed':<14} {'# of MS':<10} {'Handoffs':<12} {'RSS Drops':<12} {'SNR Drops':<12} {'Total'}")
+        print(f"  {'-'*65}")
 
         speed_categories = ["stationary", "slow", "fast", "very_fast"]
         for category in speed_categories:
             category_ms = [ms for ms in mobile_stations if ms.get_speed_category() == category]
             if not category_ms:
                 continue
-            total_drops = sum(ms.drop_count for ms in category_ms)
+            
+            ms_ids         = [ms.id for ms in category_ms]
             total_handoffs = sum(ms.handoff_count for ms in category_ms)
-            print(f"  {category:<14} {len(category_ms):<10} {total_handoffs:<12} {total_drops}")
+            rss_drops      = len([d for d in self.call_drops if d[1] in ms_ids and d[2] == "rss"])
+            snr_drops      = len([d for d in self.call_drops if d[1] in ms_ids and d[2] == "snr"])
+            total_drops    = rss_drops + snr_drops
+            
+            print(f"  {category:<14} {len(category_ms):<10} {total_handoffs:<12} {rss_drops:<12} {snr_drops:<12} {total_drops}")
 
         print(f"\n{'='*65}\n")
 

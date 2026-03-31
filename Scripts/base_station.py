@@ -4,14 +4,14 @@ import math
 
 # Fuzzy scoring thresholds
 RSS_THRESHOLDS  = {"low": -65, "high": -50}   # dBm
-SNR_THRESHOLDS  = {"low": 30,  "high": 45}    # dB  (SNR = RSS - noise_floor(-100), so range is ~35-55)
-LOAD_THRESHOLDS = {"low": 40,  "high": 70}    # % (unchanged, these were already reasonable)
+SNR_THRESHOLDS  = {"low": 15,  "high": 30}    # dB  (SNR = RSS - noise_floor(-100), so range is ~35-55)
+LOAD_THRESHOLDS = {"low": 45, "high": 75}    # %
  
 # FFDS weights 
-FFDS_WEIGHTS = {"rss": 0.4, "snr": 0.35, "load": 0.25}
+FFDS_WEIGHTS = {"rss": 0.70, "snr": 0.12, "load": 0.18}
 #These thresholds and weights can be adjusted if needed
 
-
+REFERENCE_LOAD = 22
 
 #Returns a fuzzy score (0.0 to 1.0) for a given metric value based on defined thresholds
 #Value = the measured metric value (RSS, SNR, load)
@@ -33,7 +33,7 @@ def fuzzy_score(value, low_thresh, high_thresh, invert=False):
 
 
 class BaseStation:
-    def __init__(self, id, x, y, power, noise, congestion, max_capacity, coverage_radius):
+    def __init__(self, id, x, y, power, noise, congestion, coverage_radius):
         #unique identifier for the base station
         self.id = id
 
@@ -44,7 +44,6 @@ class BaseStation:
         self.power = power  #in dBm
         self.noise = noise  
         self.congestion = congestion
-        self.max_capacity = max_capacity #max number of simultaneous calls this base station can handle
         
         #minimum guaranteed level of noise that exists for each BS
         self.noise_floor  = -100
@@ -57,10 +56,10 @@ class BaseStation:
 
     #add an MS to the list of active calls connected to the BS
     def add_call(self, ms):
-        if len(self.active_calls) < self.max_capacity:
-            self.active_calls.append(ms)
-            return True
-        return False
+        if len(self.active_calls) >= REFERENCE_LOAD:
+            return False  # refuse connection, MS stays unconnected or tries next BS
+        self.active_calls.append(ms)
+        return True
     
     
 
@@ -70,39 +69,11 @@ class BaseStation:
             self.active_calls.remove(ms)
             return True
         return False
+       
     
-    
-    
-    #Return current occupancy as a percentage (0–100).
-    def get_cell_load(self):
-        return (len(self.active_calls) / self.max_capacity) * 100
-    
-
-    #check if the BS is overloaded (at or above capacity)
-    def is_overloaded(self):
-        return len(self.active_calls) >= self.max_capacity
-    
-    #when BS is overloaded, drop weakest call
-    def drop_weakest_call(self):
-        if not self.is_overloaded():
-            return None
-        
-        # find the MS with the worst signal on this BS
-        weakest_ms  = None
-        weakest_rss = float('inf')
-        
-        for ms in self.active_calls:
-            rss = self.calculate_rss(ms)
-            if rss < weakest_rss:
-                weakest_rss = rss
-                weakest_ms  = ms
-        
-        if weakest_ms:
-            self.remove_call(weakest_ms)
-            weakest_ms.connected_bs = None
-            weakest_ms.call_dropped = True
-        
-        return weakest_ms
+    #Return current occupancy
+    def get_load(self):
+        return (len(self.active_calls) / REFERENCE_LOAD) * 100
 
 
     #Euclidean distance between the BS and a given MS
@@ -133,32 +104,28 @@ class BaseStation:
     #This is where the noise floor is used
     def calculate_snr(self, ms):
         #SNR = RSS − noise_floor
-        return self.calculate_rss(ms) - self.noise_floor
-    
-    
+
+        cached_rss = self.get_cached_rss(ms)
+        effective_noise_floor = self.noise_floor + (self.get_load() * 0.25)
+        return cached_rss - effective_noise_floor
     
     #Calculate the Full Fuzzy Decision Score for this BS
     #Returns a value in [0, 1]. higher is better. Load score is inverted since for that lower is better
     def calculate_ffds(self, ms):
-       
-        rss  = self.get_cached_rss(ms)   
-        snr  = rss - self.noise_floor    
+        rss  = self.get_cached_rss(ms)
+        snr  = self.calculate_snr(ms)   # use dynamic SNR not static noise_floor
         load = self.get_load()
- 
+
         rss_score  = fuzzy_score(rss,  RSS_THRESHOLDS["low"],  RSS_THRESHOLDS["high"],  invert=False)
         snr_score  = fuzzy_score(snr,  SNR_THRESHOLDS["low"],  SNR_THRESHOLDS["high"],  invert=False)
         load_score = fuzzy_score(load, LOAD_THRESHOLDS["low"], LOAD_THRESHOLDS["high"], invert=True)
- 
+
         ffds = (
             FFDS_WEIGHTS["rss"]  * rss_score +
             FFDS_WEIGHTS["snr"]  * snr_score +
             FFDS_WEIGHTS["load"] * load_score
         )
         return ffds
-    
-    def get_load(self):
-        return (len(self.active_calls) / self.max_capacity) * 100
-    
     
     #helper function that acts as print(bs) to show all the info regarding this BS (special modifiable python function)
     def __repr__(self):
