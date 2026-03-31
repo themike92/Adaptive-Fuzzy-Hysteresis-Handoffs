@@ -209,7 +209,6 @@ def plot_handoff_delay(all_results):
     apply_dark_style(ax, "Cumulative Handoffs Over Time", "Time Step", "Total Handoffs")
     save_fig("7_handoff_timing.png")
 
-
 def plot_avg_rss_comparison(all_results):
     fig, ax = plt.subplots(figsize=(8, 5))
     fig.patch.set_facecolor('#1a1a2e')
