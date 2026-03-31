@@ -1,6 +1,6 @@
-#mobile_station.py
+#Group 6
 #Adam Tremblay - 101264116
-#Michael Roy - 
+#Michael Roy - 101260953
 
 #Represents a mobile station object in the network. Includes spped and connection attributes, as well as movement logic.
 

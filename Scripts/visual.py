@@ -1,6 +1,6 @@
-#visual.py
+#Group 6
 #Adam Tremblay - 101264116
-#Michael Roy - 
+#Michael Roy - 101260953
 #Controls the visual animation of the simulation, using matplotlib
 
 

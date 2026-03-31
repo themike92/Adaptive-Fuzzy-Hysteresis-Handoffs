@@ -1,6 +1,6 @@
-#sim.py
+#Group 6
 #Adam Tremblay - 101264116
-#Michael Roy - 
+#Michael Roy - 101260953
 
 #Main simulation logic, where all the handoff algorithms are implemented and applied. The simulation environment is also set up here using simpy, 
 

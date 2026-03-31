@@ -1,6 +1,6 @@
-#network.py
+#Group 6
 #Adam Tremblay - 101264116
-#Michael Roy - 
+#Michael Roy - 101260953
 #Network generation and management
 
 import math
