@@ -32,7 +32,7 @@ class Visualizer:
         
         self._draw_hex_grid()
         #IF YOU CHANGE THE MS CIRCLE BOUNDARY CHANGE THE VISUAL TOO
-        self._draw_boundary(cx=500, cy=500, boundary_radius=415)
+        self._draw_boundary(cx=500, cy=500, boundary_radius=450)
         self._init_stations()
 
         self.sub_frames    = 4   # animation frames between each sim step

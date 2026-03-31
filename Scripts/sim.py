@@ -2,7 +2,10 @@
 #This is where all handoff logic (baseline, adaptive, and fuzzy) will be determined and applies
 
 import random
-RANDOM_SEED = 444
+#RANDOM_SEED = 42
+#RANDOM_SEED = 12345
+
+RANDOM_SEED = 6767
 
 import simpy
 from network import Network
@@ -12,18 +15,18 @@ from visual import Visualizer
 from results import Results
 
 #Hysteresis constants. All H values are in dBm
-H_FIXED = 10             # fixed margin used by the baseline algorithm
+H_FIXED = 9             # fixed margin used by the baseline algorithm
 H_DEF   = 8             # default margin for adaptive and fuzzy algorithms
 H_MIN   = 1             # minimum margin so it never gets too small
 H_MAX   = 12            # maximum margin so it never gets too large
-K       = 0.08          # sensitivity constant, controls how much speed affects the margin
+K       = 0.1          # sensitivity constant, controls how much speed affects the margin
 
 # Drop threshold, in dBm
-RSS_DROP_THRESHOLD = -76
-SNR_DROP_THRESHOLD = 6
+RSS_DROP_THRESHOLD = -74
+SNR_DROP_THRESHOLD = 8
 
 # Simulation defaults
-SIM_DURATION = 50
+SIM_DURATION = 200
 SIM_INTERVAL = 50
 
 def ms_process(env, ms, network, algorithm, results):
@@ -221,7 +224,7 @@ def check_call_drop(ms, curr_time, results):
         results.record_snr(curr_time, ms, curr_snr)
 
     rss_drop        = curr_rss < RSS_DROP_THRESHOLD
-    snr_drop        = curr_snr < SNR_DROP_THRESHOLD and ms.connected_bs.get_load() > 65
+    snr_drop        = curr_snr < SNR_DROP_THRESHOLD
 
     if rss_drop or snr_drop:
         ms.connected_bs.remove_call(ms)
@@ -255,7 +258,6 @@ def generate_network(num_ms):
         ms.initial_speed     = ms.speed
         ms.initial_direction = ms.direction
         ms.initial_steps     = ms._steps_since_direction_change
-        
         
     return network
 
@@ -332,7 +334,7 @@ def run_visual_simulation(algorithm, network):
     env     = _build_env(network, algorithm, results)
     
     
-    viz = Visualizer(network, cell_radius=130, signal_radius=250)
+    viz = Visualizer(network, cell_radius=80, signal_radius=170)
     
     def sim_step():
         next_time = env.now + 1

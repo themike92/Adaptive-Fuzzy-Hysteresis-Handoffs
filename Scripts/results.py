@@ -40,6 +40,23 @@ class Results:
                 if new_bs_j == old_bs:
                     self.ping_pongs.append((time_j, ms_id))
                     break
+
+    def avg_time_between_handoffs(self):
+        if len(self.handoffs) < 2:
+            return 0
+        
+        # group by MS
+        ms_handoff_times = {}
+        for time, ms_id, old_bs, new_bs in self.handoffs:
+            ms_handoff_times.setdefault(ms_id, []).append(time)
+        
+        gaps = []
+        for ms_id, times in ms_handoff_times.items():
+            sorted_times = sorted(times)
+            for i in range(1, len(sorted_times)):
+                gaps.append(sorted_times[i] - sorted_times[i-1])
+        
+        return sum(gaps) / len(gaps) if gaps else 0
     
     def print_summary(self, mobile_stations):
         self.detect_ping_pongs()
@@ -54,6 +71,9 @@ class Results:
         print(f"  Total handoffs   : {len(self.handoffs)}")
         print(f"  Total call drops : {len(self.call_drops)}")
         print(f"  Ping-pong events : {len(self.ping_pongs)}")
+        
+        avg_gap = self.avg_time_between_handoffs()
+        print(f"  Avg time between handoffs: {avg_gap:.1f} steps")
 
         rss_drops        = [d for d in self.call_drops if d[2] == "rss"]
         snr_drops        = [d for d in self.call_drops if d[2] == "snr"]

@@ -17,37 +17,24 @@ class Network:
     
     #build the base station objects of the network
     #returns a list of the BSs
-    def generate_base_stations(self, center_x=500, center_y=500, cell_radius=130, rings=1):
-        
+    def generate_base_stations(self, center_x=500, center_y=500, cell_radius=80, rings=2):
         centers = self.generate_hex_centers(center_x, center_y, cell_radius, rings)
         self.base_stations = []
- 
-        # Predefined base station configurations
-        configs = [
-            {"power": 25, "noise": 2.2, "congestion": 0.5},
-            {"power": 27, "noise": 1.8, "congestion": 0.5},
-            {"power": 22, "noise": 2.5, "congestion": 0.6},
-            {"power": 25, "noise": 1.5, "congestion": 0.7},
-            {"power": 20, "noise": 4.0, "congestion": 0.4},
-            {"power": 23, "noise": 3.0, "congestion": 0.5},
-            {"power": 19, "noise": 2.7, "congestion": 0.3},
-        ]
+
+        rng = random.Random(12345)  # fixed seed so BSs are deterministic
 
         for i, (x, y) in enumerate(centers):
-            config = configs[i]
-
             bs = BaseStation(
                 id=i,
                 x=x,
                 y=y,
-                power=config["power"],
-                noise=config["noise"],
-                congestion=config["congestion"],
-                coverage_radius=250
+                power=rng.uniform(19, 27),
+                noise=rng.uniform(1.5, 4.0),
+                congestion=rng.uniform(0.3, 0.7),
+                coverage_radius=170
             )
-
             self.base_stations.append(bs)
- 
+
         return self.base_stations
 
     #build each MS object in the Network
@@ -65,28 +52,33 @@ class Network:
     #places the BSs on a hexogonal grid
     #rings is pretty much how many "layers" of BSs there are (rings = 1 means 7 BSs)
     #We'll keep it hardcoded at 7 for now, but we can easily change it to generate more if needed
-    def generate_hex_centers(self, center_x, center_y, cell_radius, rings=1):
-        centers = [(center_x, center_y)]  # center of the BSs
-        
-        if rings >= 1:
-            horiz = math.sqrt(3) * cell_radius
+    def generate_hex_centers(self, center_x, center_y, cell_radius, rings):
+        centers = [(center_x, center_y)]
+        horiz = math.sqrt(3) * cell_radius
 
-            directions = [
-                (0,       cell_radius * 2),
-                (horiz,   cell_radius),
-                (horiz,  -cell_radius),
-                (0,      -cell_radius * 2),
-                (-horiz, -cell_radius),
-                (-horiz,  cell_radius),
-            ]
-                        
-            for dx, dy in directions:
-                centers.append((center_x + dx, center_y + dy))
-        
+        # The 6 unit-step directions for walking around a ring (pointy-top hex)
+        step_directions = [
+            ( horiz,  -cell_radius),   # SE
+            ( 0,      -cell_radius*2), # S
+            (-horiz,  -cell_radius),   # SW
+            (-horiz,   cell_radius),   # NW
+            ( 0,       cell_radius*2), # N
+            ( horiz,   cell_radius),   # NE
+        ]
+
+        for r in range(1, rings + 1):
+            # Start position: move r steps north from center
+            x = center_x
+            y = center_y + r * cell_radius * 2
+
+            # Walk the 6 sides of the ring, r steps per side
+            for side, (dx, dy) in enumerate(step_directions):
+                for _ in range(r):
+                    centers.append((x, y))
+                    x += dx
+                    y += dy
+
         return centers
-        
-        #If we want to add more rings:
-        #if R == 2:
     
     
     #finds the BS with the strongest signal at the MSs location

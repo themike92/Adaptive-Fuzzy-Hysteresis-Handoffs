@@ -13,7 +13,7 @@ SPEEDS = [STATIONARY, SLOW, FAST, VERY_FAST]
 DIRECTION_CHANGE_INTERVAL = 25 
 
 class MobileStation:
-    def __init__(self, id, bounds=(235, 765, 235, 765)):
+    def __init__(self, id, bounds=(150, 850, 150, 850)):
         #identifier for the mobile station
         self.id = id
         self.bounds = bounds
@@ -25,7 +25,7 @@ class MobileStation:
         self.y = self.move_rng.randint(bounds[2], bounds[3])
         self.speed = self.move_rng.choices(
             SPEEDS,
-            weights=[0.05, 0.2, 0.4, 0.35]
+            weights=[0.05, 0.15, 0.35, 0.45]
         )[0]
         
         # {bs_id: rss_value}, refreshed each time step
@@ -45,6 +45,7 @@ class MobileStation:
         
         #determine if the current MS has experienced a call drop 
         self.call_dropped  = False
+        self.handoff_cooldown = 0
         
         #call drop counter
         self.drop_count   = 0
@@ -62,7 +63,7 @@ class MobileStation:
     #advance MS by a certain amount each time step, in the same direction for a while
     #Boundary radius is the circle that the MSs bounce off
     #MSs refelct either off the walls, or the circle boundary
-    def move(self, dt=1, cx=500, cy=500, boundary_radius=415):
+    def move(self, dt=1, cx=500, cy=500, boundary_radius=450):
         if self.speed == STATIONARY:
             return
 
