@@ -3,9 +3,7 @@
 
 import random
 #RANDOM_SEED = 42
-#RANDOM_SEED = 12345
-
-RANDOM_SEED = 6767
+RANDOM_SEED = 12345
 
 import simpy
 from network import Network
@@ -16,14 +14,14 @@ from results import Results
 
 #Hysteresis constants. All H values are in dBm
 H_FIXED = 9             # fixed margin used by the baseline algorithm
-H_DEF   = 8             # default margin for adaptive and fuzzy algorithms
+H_DEF   = 9             # default margin for adaptive and fuzzy algorithms
 H_MIN   = 1             # minimum margin so it never gets too small
 H_MAX   = 12            # maximum margin so it never gets too large
-K       = 0.1          # sensitivity constant, controls how much speed affects the margin
+K       = 0.1           # sensitivity constant, controls how much speed affects the margin
 
 # Drop threshold, in dBm
-RSS_DROP_THRESHOLD = -74
-SNR_DROP_THRESHOLD = 8
+RSS_DROP_THRESHOLD = -32
+SNR_DROP_THRESHOLD = 44
 
 # Simulation defaults
 SIM_DURATION = 200
