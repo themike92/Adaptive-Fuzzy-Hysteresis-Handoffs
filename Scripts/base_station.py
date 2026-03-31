@@ -46,7 +46,7 @@ class BaseStation:
         self.congestion = congestion
         
         #minimum guaranteed level of noise that exists for each BS
-        self.noise_floor  = -95
+        self.noise_floor  = -100
 
         #List of mobile stations currently connected to this base station
         self.active_calls = []
@@ -106,7 +106,7 @@ class BaseStation:
         #SNR = RSS − noise_floor
 
         cached_rss = self.get_cached_rss(ms)
-        effective_noise_floor = self.noise_floor + (self.get_load() * 0.2)
+        effective_noise_floor = self.noise_floor + (self.get_load() * 0.25)
         return cached_rss - effective_noise_floor
     
     #Calculate the Full Fuzzy Decision Score for this BS

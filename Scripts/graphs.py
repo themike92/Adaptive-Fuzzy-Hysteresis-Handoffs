@@ -209,6 +209,29 @@ def plot_handoff_delay(all_results):
     apply_dark_style(ax, "Cumulative Handoffs Over Time", "Time Step", "Total Handoffs")
     save_fig("7_handoff_timing.png")
 
+def plot_avg_rss_comparison(all_results):
+    fig, ax = plt.subplots(figsize=(8, 5))
+    fig.patch.set_facecolor('#1a1a2e')
+
+    values = []
+    for alg in ALGORITHMS:
+        rss_log = all_results[alg].rss_log
+        if rss_log:
+            avg = sum(r[2] for r in rss_log) / len(rss_log)
+        else:
+            avg = 0
+        values.append(avg)
+
+    bars = ax.bar(ALGORITHMS, values, color=[COLORS[a] for a in ALGORITHMS], width=0.5)
+
+    for bar, val in zip(bars, values):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() - 1,
+                f'{val:.2f}', ha='center', va='top', color='white', fontsize=10)
+
+    apply_dark_style(ax, "Average RSS per Algorithm (Higher is Better)", 
+                    "Algorithm", "Average RSS (dBm)")
+    save_fig("8_avg_rss_comparison.png")
+
 # Main entry point — call this from sim.py after run_all_simulations
 def generate_all_graphs(all_results, mobile_stations):
     ensure_graphs_dir()
@@ -225,6 +248,7 @@ def generate_all_graphs(all_results, mobile_stations):
     plot_snr_over_time(all_results)
     plot_drops_by_speed(all_results, mobile_stations)
     plot_handoff_delay(all_results)
+    plot_avg_rss_comparison(all_results)
     
     # restore original backend so visual.py still works
     matplotlib.use(original_backend)
