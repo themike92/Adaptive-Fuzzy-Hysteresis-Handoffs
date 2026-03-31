@@ -3,15 +3,15 @@ import random
 import math
 
 # Fuzzy scoring thresholds
-RSS_THRESHOLDS  = {"low": -65, "high": -50}   # dBm
-SNR_THRESHOLDS  = {"low": 15,  "high": 30}    # dB  (SNR = RSS - noise_floor(-100), so range is ~35-55)
+RSS_THRESHOLDS  = {"low": -74, "high": -55}   # dBm
+SNR_THRESHOLDS = {"low": 20, "high": 40}    # dB  (SNR = RSS - noise_floor(-100), so range is ~35-55)
 LOAD_THRESHOLDS = {"low": 45, "high": 75}    # %
  
 # FFDS weights 
-FFDS_WEIGHTS = {"rss": 0.70, "snr": 0.12, "load": 0.18}
+FFDS_WEIGHTS    = {"rss": 0.45, "snr": 0.30, "load": 0.25}
 #These thresholds and weights can be adjusted if needed
 
-REFERENCE_LOAD = 22
+REFERENCE_LOAD = 15
 
 #Returns a fuzzy score (0.0 to 1.0) for a given metric value based on defined thresholds
 #Value = the measured metric value (RSS, SNR, load)
@@ -19,17 +19,13 @@ REFERENCE_LOAD = 22
 #invert = True for load since lower load is better, False for RSS and SNR where higher is better
 def fuzzy_score(value, low_thresh, high_thresh, invert=False):
     if value <= low_thresh:
-        score = 0.0   # low
+        score = 0.0
     elif value >= high_thresh:
-        score = 1.0   # high
+        score = 1.0
     else:
-        score = 0.5   # medium
- 
-    # For load, a lower percentage is better, so we flip the score
-    if invert == True:
-        return 1.0 - score
-    else:
-        return score
+        score = (value - low_thresh) / (high_thresh - low_thresh)
+
+    return 1.0 - score if invert else score
 
 
 class BaseStation:
@@ -106,7 +102,7 @@ class BaseStation:
         #SNR = RSS − noise_floor
 
         cached_rss = self.get_cached_rss(ms)
-        effective_noise_floor = self.noise_floor + (self.get_load() * 0.25)
+        effective_noise_floor = self.noise_floor + (self.get_load() * 0.225)
         return cached_rss - effective_noise_floor
     
     #Calculate the Full Fuzzy Decision Score for this BS

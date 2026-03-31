@@ -1,3 +1,9 @@
+#visual.py
+#Adam Tremblay - 101264116
+#Michael Roy - 
+#Controls the visual animation of the simulation, using matplotlib
+
+
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.patches as patches
@@ -5,6 +11,8 @@ from matplotlib.lines import Line2D
 import math
 
 class Visualizer:
+    # Initialize the visualizer with the network, cell radius, and signal radius. 
+    # Set up the Matplotlib figure and axes, and draw the initial state of the network
     def __init__(self, network, cell_radius, signal_radius):
         self.network = network
         self.cell_radius = cell_radius
@@ -18,7 +26,7 @@ class Visualizer:
         self.ax.set_facecolor('#1a1a2e')
         self.fig.patch.set_facecolor('#1a1a2e')
         
-        # fix axis tick and label colors
+        #axis tick and label colors
         self.ax.tick_params(colors='white')
         self.ax.xaxis.label.set_color('white')
         self.ax.yaxis.label.set_color('white')
@@ -30,14 +38,19 @@ class Visualizer:
         self.connections = []
         self.hex_patches = []
         
+        #draw all the hexagonal cells and the signal range circles for each BS
         self._draw_hex_grid()
-        #IF YOU CHANGE THE MS CIRCLE BOUNDARY CHANGE THE VISUAL TOO
-        self._draw_boundary(cx=500, cy=500, boundary_radius=415)
+        #Set the circle representing the MS movement boundary
+        self._draw_boundary(cx=500, cy=500, boundary_radius=450)
+        # draw the initial positions of the BSs and MSs, and set up the legend in the top right
         self._init_stations()
 
         self.sub_frames    = 4   # animation frames between each sim step
         self.current_sub   = 0
     
+    
+    # calculate the corners of a hexagon for a given center point
+    # Draw the hexagonal grid representing the BS coverage areas
     def _hex_corners(self, cx, cy):
         corners = []
         for i in range(6):
@@ -47,7 +60,11 @@ class Visualizer:
             corners.append((x, y))
         return corners
     
+    
+    # Draw the hexagonal grid representing the BS coverage areas, and the faint circles representing signal range
     def _draw_hex_grid(self):
+        
+        # hex grid
         for bs in self.network.base_stations:
             corners = self._hex_corners(bs.x, bs.y)
             hex_patch = patches.Polygon(
@@ -72,6 +89,8 @@ class Visualizer:
             )
             self.ax.add_patch(range_circle)
     
+    
+    # initialize the station markers and labels, and set up the legend
     def _init_stations(self):
         # draw BS markers
         bs_x = [bs.x for bs in self.network.base_stations]
@@ -126,6 +145,8 @@ class Visualizer:
             labelcolor='white'
         )
     
+    
+    # Update the positions and colors of the MSs, and redraw the connection lines to the BSs if needed
     def update(self, frame, t):
         ms_x = [ms.prev_x + (ms.x - ms.prev_x) * t for ms in self.network.mobile_stations]
         ms_y = [ms.prev_y + (ms.y - ms.prev_y) * t for ms in self.network.mobile_stations]
@@ -167,6 +188,10 @@ class Visualizer:
         
         return [self.ms_scatter] + self.connections
     
+    
+    # Start the animation
+    # use sim_step_fn to advance the simulation state every few frames
+    # use the update fucntion to redraw the positions and connections every frame
     def start(self, sim_step_fn, interval, duration):
         self.frame_count = 0
         self.duration = duration
@@ -196,7 +221,8 @@ class Visualizer:
         plt.tight_layout()
         plt.show()
         
-        
+    
+    # Draw the circle boundary representing the MS movement area
     def _draw_boundary(self, cx, cy, boundary_radius):
         boundary_circle = patches.Circle(
             (cx, cy),
