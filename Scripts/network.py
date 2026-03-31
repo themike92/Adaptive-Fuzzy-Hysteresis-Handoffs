@@ -1,4 +1,8 @@
-#any network generation and logic seperate from the simulation
+#network.py
+#Adam Tremblay - 101264116
+#Michael Roy - 
+#Network generation and management
+
 import math
 import random
 
@@ -6,8 +10,9 @@ from base_station import BaseStation
 from mobile_station import MobileStation
 
 class Network:
-    
+    #Initialize the network with empty lists of BSs and MSs, and set the grid bounds
     def __init__(self, bounds=(0, 1000, 0, 1000)):
+        
         #bounds = (x_min, x_max, y_min, y_max)
         self.bounds          = bounds
         
@@ -15,13 +20,15 @@ class Network:
         self.base_stations   = []
         self.mobile_stations = []
     
-    #build the base station objects of the network
+    #create the base station objects of the network
     #returns a list of the BSs
     def generate_base_stations(self, center_x=500, center_y=500, cell_radius=80, rings=2):
+        
         centers = self.generate_hex_centers(center_x, center_y, cell_radius, rings)
         self.base_stations = []
 
-        rng = random.Random(12345)  # fixed seed so BSs are deterministic
+        # fixed seed so BSs are deterministic
+        rng = random.Random(12345)  
 
         for i, (x, y) in enumerate(centers):
             bs = BaseStation(
@@ -50,13 +57,12 @@ class Network:
     
     
     #places the BSs on a hexogonal grid
-    #rings is pretty much how many "layers" of BSs there are (rings = 1 means 7 BSs)
-    #We'll keep it hardcoded at 7 for now, but we can easily change it to generate more if needed
+    #rings is pretty much how many "layers" of BSs there are. We use 2 rings, so in total there are 19 BSs
     def generate_hex_centers(self, center_x, center_y, cell_radius, rings):
         centers = [(center_x, center_y)]
         horiz = math.sqrt(3) * cell_radius
 
-        # The 6 unit-step directions for walking around a ring (pointy-top hex)
+        # The 6 unit-step directions for walking around a ring 
         step_directions = [
             ( horiz,  -cell_radius),   # SE
             ( 0,      -cell_radius*2), # S
@@ -84,7 +90,9 @@ class Network:
     #finds the BS with the strongest signal at the MSs location
     def find_strongest_bs(self, ms):
         best_bs  = None
-        best_rss = float('-inf')  # start at negative infinity so any real RSS beats it
+        
+        #Start at negative infinity so any real RSS will be better than it
+        best_rss = float('-inf')  
 
         for bs in self.base_stations:
             if bs.calculate_distance(ms) > bs.coverage_radius:

@@ -1,4 +1,9 @@
-#This will be the code for our mobile stations
+#mobile_station.py
+#Adam Tremblay - 101264116
+#Michael Roy - 
+
+#Represents a mobile station object in the network. Includes spped and connection attributes, as well as movement logic.
+
 import random
 import math
 
@@ -13,27 +18,29 @@ SPEEDS = [STATIONARY, SLOW, FAST, VERY_FAST]
 DIRECTION_CHANGE_INTERVAL = 25 
 
 class MobileStation:
+    #Initialize a mobile station object 
+    #All positions and movement are generate with RNG. This is keep the movement consistent across the different algorithms for fair comparison.
     def __init__(self, id, bounds=(150, 850, 150, 850)):
-        #identifier for the mobile station
+        
         self.id = id
         self.bounds = bounds
-
         self.move_rng = random.Random(id)
-        #initial random position and speed
-        #make sure the MS start in the range of the BSs
+        
         self.x = self.move_rng.randint(bounds[0], bounds[1]) 
         self.y = self.move_rng.randint(bounds[2], bounds[3])
+        
+        #probability distribution for speed categories: 5% stationary, 15% slow, 35% fast, 45% very fast
         self.speed = self.move_rng.choices(
             SPEEDS,
             weights=[0.05, 0.15, 0.35, 0.45]
         )[0]
         
-        # {bs_id: rss_value}, refreshed each time step
+        # cache for RSS values to avoid recalculating for the same BS repeatedly, key is BS id, value is RSS
         self.rss_cache = {}  
-        self.load_cache = {}
         
         #determine the direction of the MS (radians)
-        self.direction = self.move_rng.uniform(0, 2 * math.pi)  
+        self.direction = self.move_rng.uniform(0, 2 * math.pi)
+        
         # Internal timer for direction changes
         self._steps_since_direction_change = 0
         
@@ -47,22 +54,29 @@ class MobileStation:
         self.call_dropped  = False
         self.handoff_cooldown = 0
         
+        #cooldown timer to prevent excessive handoffs in succession
+        self.handoff_cooldown = 0
+        
         #call drop counter
         self.drop_count   = 0
 
         # countdown timer for purple flash
         self.handoff_flash = 0
+        
+        #countdown timer for red flash
         self.drop_flash = 0
         self._drop_flash_set = False
         
-        self.prev_x = self.x    # position at start of last sim step
-        self.prev_y = self.y    # position at start of last sim step
-        self.next_x = self.x    # position at end of last sim step  
-        self.next_y = self.y    # position at end of last sim step
+        # position at start of last sim step
+        self.prev_x = self.x    
+        self.prev_y = self.y  
+        
+        # position at end of last sim step 
+        self.next_x = self.x     
+        self.next_y = self.y    
         
     #advance MS by a certain amount each time step, in the same direction for a while
     #Boundary radius is the circle that the MSs bounce off
-    #MSs refelct either off the walls, or the circle boundary
     def move(self, dt=1, cx=500, cy=500, boundary_radius=450):
         if self.speed == STATIONARY:
             return
@@ -82,11 +96,6 @@ class MobileStation:
         if new_x < x_min or new_x > x_max:
             self.direction = math.pi - self.direction
             new_x = max(x_min, min(new_x, x_max))
-
-        # Reflect off vertical walls
-        if new_y < y_min or new_y > y_max:
-            self.direction = -self.direction
-            new_y = max(y_min, min(new_y, y_max))
 
         
         # If on circle boundary, bounce back within the cell cluster
@@ -108,9 +117,12 @@ class MobileStation:
         self.next_x = self.x
         self.next_y = self.y
 
+        #increase the direction change timer and change direction if needed
         self._steps_since_direction_change += 1
         if self._steps_since_direction_change >= DIRECTION_CHANGE_INTERVAL:
             self.change_direction()
+            
+            
  
     #choose a new random direction and reset the step counter
     def change_direction(self):
