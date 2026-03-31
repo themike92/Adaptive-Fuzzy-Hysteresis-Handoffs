@@ -233,11 +233,24 @@ def plot_avg_rss_comparison(all_results):
     save_fig("8_avg_rss_comparison.png")
     
 
+def plot_avg_time_between_handoffs(all_results):
+    fig, ax = plt.subplots(figsize=(8, 5))
+    fig.patch.set_facecolor('#1a1a2e')
 
+    values = []
+    for alg in ALGORITHMS:
+        avg_gap = all_results[alg].avg_time_between_handoffs()
+        values.append(avg_gap)
 
+    bars = ax.bar(ALGORITHMS, values, color=[COLORS[a] for a in ALGORITHMS], width=0.5)
 
+    for bar, val in zip(bars, values):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.2,
+                f'{val:.1f}', ha='center', va='bottom', color='white', fontsize=10)
 
-
+    apply_dark_style(ax, "Average Time Between Handoffs (Higher = More Stable)",
+                    "Algorithm", "Avg Steps Between Handoffs")
+    save_fig("9_avg_time_between_handoffs.png")
 
 
 def plot_rss_distribution(all_results):
@@ -327,6 +340,7 @@ def generate_all_graphs(all_results, mobile_stations):
     plot_avg_rss_comparison(all_results)
     plot_rss_distribution(all_results)
     plot_snr_distribution(all_results)
+    plot_avg_time_between_handoffs(all_results)
     
     # restore original backend so visual.py still works
     matplotlib.use(original_backend)

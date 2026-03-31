@@ -22,7 +22,7 @@ def get_user_choice():
             print("Invalid input, please enter a number.")
 
 def get_num_ms():
-    return 90
+    return 140
 
 def main():
     num_ms  = get_num_ms()
