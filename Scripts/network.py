@@ -28,7 +28,7 @@ class Network:
         self.base_stations = []
 
         # fixed seed so BSs are deterministic
-        rng = random.Random(12345)  
+        rng = random.Random(12345)
 
         for i, (x, y) in enumerate(centers):
             bs = BaseStation(
