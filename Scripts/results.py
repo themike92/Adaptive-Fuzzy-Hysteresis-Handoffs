@@ -36,6 +36,7 @@ class Results:
     #We will detect ping pongs by looking for handoffs where the same MS switches back to a recently left BS within a set window
     def detect_ping_pongs(self, window=2):
         self.ping_pongs = []  # reset before detecting so no duplicates on repeated calls
+        
         #Go through handoff history and find rapid switches back to a previous BS
         for i in range(len(self.handoffs)):
             time_i, ms_id, old_bs, new_bs = self.handoffs[i]
