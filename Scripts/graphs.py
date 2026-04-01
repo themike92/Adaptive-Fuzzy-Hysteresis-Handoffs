@@ -324,7 +324,7 @@ def plot_avg_time_between_handoffs(all_results):
         ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.2,
                 f'{val:.1f}', ha='center', va='bottom', color='white', fontsize=10)
 
-    apply_dark_style(ax, "Average Time Between Handoffs (Higher = More Stable)",
+    apply_dark_style(ax, "Average Time Between Handoffs",
                     "Algorithm", "Avg Steps Between Handoffs")
     save_fig("9_avg_time_between_handoffs.png")
 
