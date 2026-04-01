@@ -7,7 +7,7 @@
 
 #Use a seed to keep everything deterministic across runs
 import random
-RANDOM_SEED = 6767
+RANDOM_SEED = 12345
 
 import simpy #Use Simpy for the simulation environment and event scheduling
 from network import Network

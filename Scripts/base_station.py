@@ -1,3 +1,4 @@
+
 #Group 6
 #Adam Tremblay - 101264116
 #Michael Roy - 101260953
@@ -6,12 +7,12 @@
 import random
 import math
 
-# Fuzzy scoring thresholds
+#Fuzzy scoring thresholds
 RSS_THRESHOLDS  = {"low": -40, "high": -10}   # dBm
 SNR_THRESHOLDS  = {"low": 63,  "high": 68}    # dB
 LOAD_THRESHOLDS = {"low": 20, "high": 80}    # %
  
-# FFDS weights 
+#FFDS weights 
 FFDS_WEIGHTS    = {"rss": 0.40, "snr": 0.40, "load": 0.20}
 #These thresholds and weights can be adjusted if needed
 
@@ -39,7 +40,7 @@ def fuzzy_score(value, low_thresh, high_thresh, invert=False):
 class BaseStation:
     # It has an id, location (x,y), power, noise level, congestion level, and coverage radius
     def __init__(self, id, x, y, power, noise, congestion, coverage_radius):
-        #unique identifier for the base station
+        #Unique identifier for the base station
         self.id = id
 
         #Base station location
@@ -96,12 +97,12 @@ class BaseStation:
         if distance == 0:
             distance = 0.1
         
-        # Free space path loss equation
+        #Free space path loss equation
         path_loss = 10 * 2.0 * math.log10(distance)
         noise = random.gauss(0, self.noise)
         congestion_penalty = len(self.active_calls) * self.congestion
         
-        # Simplified RSS model for simulation, does not need wavelength or frequency
+        #Simplified RSS model for simulation, does not need wavelength or frequency
         rss = self.power - path_loss - congestion_penalty + noise
         return rss
     
