@@ -44,7 +44,7 @@ class Results:
             for j in range(i + 1, len(self.handoffs)):
                 time_j, ms_id_j, old_bs_j, new_bs_j = self.handoffs[j]
 
-                #check to see if the ms is the same
+                #Check to see if the ms is the same
                 if ms_id_j != ms_id:
                     continue
                 #Check to see if the handoff timing is within the window
@@ -118,7 +118,7 @@ class Results:
             for r in self.snr_log:
                 avg_snr += r[2]
             avg_snr = avg_snr / len(self.snr_log)
-            
+            #Scoring tailored to our specific SNR thresholds for this simulation, can be adjusted if needed
             if avg_snr >= 67:
                 quality = "Excellent"
             elif avg_snr >= 65:
@@ -154,6 +154,8 @@ class Results:
                     avg_snr += s
                 avg_snr = avg_snr / len(ms_snr)
                 avg_str = f"{avg_snr:.2f}"
+
+                #Scoring tailored to our specific SNR thresholds for this simulation, can be adjusted if needed
                 if avg_snr >= 67.5:
                     q = "Excellent"
                 elif avg_snr >= 65.5:
@@ -164,7 +166,7 @@ class Results:
                     q = "Poor"
             else:
                 avg_str = "N/A"
-                q       = "No data"
+                q = "No data"
             
             speed = ms.get_speed_category()
             print(f"  MS-{ms.id:<4} ({speed}){'':<{12-len(speed)}} {len(ms_handoffs):<12} {ms.drop_count:<10} {avg_str:<12} {q}")
@@ -176,6 +178,8 @@ class Results:
         print(f"  {'-'*71}")
 
         speed_categories = ["stationary", "slow", "fast", "very_fast"]
+
+        #Helps to get the type of drop either RSS or SNR for each of the speeds
         for category in speed_categories:
             category_ms = []
             for ms in mobile_stations:
