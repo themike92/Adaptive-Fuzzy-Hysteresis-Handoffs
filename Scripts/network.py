@@ -9,6 +9,8 @@ import random
 from base_station import BaseStation
 from mobile_station import MobileStation
 
+BS_SEED = 12345
+
 class Network:
     #Initialize the network with empty lists of BSs and MSs, and set the grid bounds
     def __init__(self, bounds=(0, 1000, 0, 1000)):
@@ -28,7 +30,7 @@ class Network:
         self.base_stations = []
 
         # fixed seed so BSs are deterministic
-        rng = random.Random(12345)
+        rng = random.Random(BS_SEED)  
 
         for i, (x, y) in enumerate(centers):
             bs = BaseStation(
