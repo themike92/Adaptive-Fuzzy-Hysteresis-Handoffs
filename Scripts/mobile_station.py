@@ -14,7 +14,7 @@ FAST = 45
 VERY_FAST = 70
 SPEEDS = [STATIONARY, SLOW, FAST, VERY_FAST]
 
-# time steps before changing direction
+#Time steps before changing direction, makes it so the movement is realistic and not jittery
 DIRECTION_CHANGE_INTERVAL = 25 
 
 class MobileStation:
@@ -29,7 +29,7 @@ class MobileStation:
         self.x = self.move_rng.randint(bounds[0], bounds[1]) 
         self.y = self.move_rng.randint(bounds[2], bounds[3])
         
-        #probability distribution for speed categories: 5% stationary, 15% slow, 35% fast, 45% very fast
+        #Probability distribution for speed categories: 5% stationary, 15% slow, 35% fast, 45% very fast
         self.speed = self.move_rng.choices(
             SPEEDS,
             weights=[0.05, 0.15, 0.35, 0.45]
@@ -75,7 +75,7 @@ class MobileStation:
         self.next_x = self.x     
         self.next_y = self.y    
         
-    #advance MS by a certain amount each time step, in the same direction for a while
+    #Advance MS by a certain amount each time step, in the same direction for a while
     #Boundary radius is the circle that the MSs bounce off
     def move(self, dt=1, cx=500, cy=500, boundary_radius=450):
         if self.speed == STATIONARY:
@@ -84,6 +84,7 @@ class MobileStation:
         self.prev_x = self.x
         self.prev_y = self.y
 
+        #Set their new position based on their speed and direction
         dx = self.speed * math.cos(self.direction) * dt
         dy = self.speed * math.sin(self.direction) * dt
 
