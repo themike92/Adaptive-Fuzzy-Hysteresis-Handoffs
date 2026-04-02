@@ -29,8 +29,9 @@ Key Notes (Extra NOT NEEDED):
 - SIM_DURATION variable in 'sim.py' is set to 200 but for shorter visual simulations can be set lower (ex. 50)
 	- ** WILL MAKE THE RESULTING DATA NOT AS ACCURATE AS THERE WILL BE LESS TIME FOR LOTS OF EVENTS TO HAPPEN **
 
-- num_ms variable in 'main.py' is set to 150, but can be changed for less or more
+- num_ms (number of mobile stations) variable in 'main.py' is set to 150, but can be changed for less or more
 	- NOTE: ** CHANGING WILL CHANGE RESULTS AS THERE ARE EITHER LESS OR MORE MSs FOR EVENTS TO HAPPEN **
+	- ** THE REFERENCE LOAD IN THE base_station.py FILE IS PROPORTIONATE BY A FACTOR OF 10 COMPARED TO THE NUMBER OF MS (150 MSs = 15 REFERENCE LOAD)
 
 
 Relevant files (in /scripts):
