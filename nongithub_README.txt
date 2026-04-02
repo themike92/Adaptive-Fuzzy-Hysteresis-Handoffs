@@ -1,11 +1,39 @@
 
-COMP 4203 Final Project. Adam Tremblay - 101264116, Michael Roy - 101260953
+COMP 4203 Final Project.
+Group 6
+Adam Tremblay - 101264116, Michael Roy - 101260953
 
 
-Relevant files:
+Instructions to run the program:
+1. Ensure that all proper libraries are downloaded on your machine. To download them, run "pip install -r requirements.txt". 
+
+2. In your terminal, move into the Scripts folder containing all the code files (.py)
+
+3. To run the program, run "python main.py" in the terminal
+
+4. Follow the user prompt to either view all the algorithms individually (options 2 - 4), or to run them all at once (option 1) (no visual just graphs)
+
+5. Running each algorithm individually will have a visual display window pop up, and results will be printed in the terminal upon completion
+
+6. When running option 1, all 3 simulations will run sequentially without a visual sim window. When the sim is done, there will be a graphs folder that appears 
+in the Scripts folder. In this folder, there are many PNGs showing all the relevant comparisons between each algorithm. The results for each individual algorithm will 
+appear in the terminal too.
 
 
-In the Script folder:
+Key Notes (Extra NOT NEEDED):
+(These are just for performance or re-runability)
+
+- Menu Option 1 -> Graphs folder will be created in the same folder that main.py was run
+	- All the png graphs will be generated here and on reruns they will be replaced with the new ones
+
+- SIM_DURATION variable in 'sim.py' is set to 200 but for shorter visual simulations can be set lower (ex. 50)
+	- ** WILL MAKE THE RESULTING DATA NOT AS ACCURATE AS THERE WILL BE LESS TIME FOR LOTS OF EVENTS TO HAPPEN **
+
+- num_ms variable in 'main.py' is set to 150, but can be changed for less or more
+	- NOTE: ** CHANGING WILL CHANGE RESULTS AS THERE ARE EITHER LESS OR MORE MSs FOR EVENTS TO HAPPEN **
+
+
+Relevant files (in /scripts):
 
 mobile_station.py:
 	- Represents a mobile station object in the network. Includes speed and connection attributes, as well as movement logic.
@@ -40,20 +68,3 @@ Others:
 
 Requirements.txt:
 	- contains all the necessary libraries needed to successfully run this program. Instructions on how to run it below.
-
-
-Instructions to run the program:
-
-1. Ensure that all proper libraries are downloaded on your machine. To download them, run "pip install requirements.txt". 
-
-2. In your terminal, move into the Scripts folder containing all the code files (.py)
-
-3. to run the program, run "python main.py" in the terminal 
-
-4. Follow the user prompt to either view all the algorithms individually (options 2 - 4), or to run them all at once (option 1)
-
-5. Running each algorithm individually will have a visual display window pop up, and results will be printed in the terminal upon completion
-
-6. When running option 1, all 3 simulations will run sequentially without a visual sim window. When the sim is done, there will be a graphs folder that appears 
-in the Scripts folder. In this folder, there are many PNGs showing all the relevant comparisons between each algorithm. The results for each individual algorithm will 
-appear in the terminal too.
