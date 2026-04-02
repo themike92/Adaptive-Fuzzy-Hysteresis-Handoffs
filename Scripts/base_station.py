@@ -3,7 +3,7 @@
 #Adam Tremblay - 101264116
 #Michael Roy - 101260953
 
-#This will be the code for our base stations
+
 import random
 import math
 
