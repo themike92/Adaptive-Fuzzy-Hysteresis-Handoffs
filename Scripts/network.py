@@ -9,29 +9,30 @@ import random
 from base_station import BaseStation
 from mobile_station import MobileStation
 
+#Set a seed for the Base station generation so it is always the same and eliminates randomness
 BS_SEED = 12345
 
+#Network class that will hold all the BSs and MSs and have methods to generate them and manage them
 class Network:
     #Initialize the network with empty lists of BSs and MSs, and set the grid bounds
     def __init__(self, bounds=(0, 1000, 0, 1000)):
-        
-        #bounds = (x_min, x_max, y_min, y_max)
-        self.bounds          = bounds
+        self.bounds = bounds
         
         #contains all the BSs and MSs in the network
         self.base_stations   = []
         self.mobile_stations = []
     
-    #create the base station objects of the network
+    #Create the base station objects of the network
     #returns a list of the BSs
     def generate_base_stations(self, center_x=500, center_y=500, cell_radius=80, rings=2):
-        
+        #Number of rings in the network set. 2 rings means there will be 19 BSs in total
         centers = self.generate_hex_centers(center_x, center_y, cell_radius, rings)
         self.base_stations = []
 
-        # fixed seed so BSs are deterministic
-        rng = random.Random(BS_SEED)  
+        # Fixed seed so BSs are deterministic
+        rng = random.Random(BS_SEED)
 
+        #Create the specs for each base station
         for i, (x, y) in enumerate(centers):
             bs = BaseStation(
                 id=i,
@@ -46,7 +47,7 @@ class Network:
 
         return self.base_stations
 
-    #build each MS object in the Network
+    #Build each MS object in the Network
     #returns a list of the MSs
     def generate_mobile_stations(self, num):
         self.mobile_stations = []
@@ -74,6 +75,7 @@ class Network:
             ( horiz,   cell_radius),   # NE
         ]
 
+        #Helps us tile the hexagon grid
         for r in range(1, rings + 1):
             # Start position: move r steps north from center
             x = center_x
@@ -108,7 +110,7 @@ class Network:
         return best_bs
     
     
-    #returns a list of all the neighboring BSs to a given BS
+    #Returns a list of all the neighboring BSs to a given BS
     def get_neighbor_stations(self, bs, ms=None):
         neighbors = []
         for b in self.base_stations:
@@ -136,9 +138,6 @@ class Network:
                     break
         #If no BS is avaliable, the MS stays unconnected (nothing changes from their default value)
         
-        
-    
-    
     #Print functions 
     #Network topology summary:
     def print_summary(self):

@@ -31,7 +31,12 @@ def get_user_choice():
 
 def main():
     #Sets the number of mobile stations in the network for the simulation
+
+    # LOWER NUMBER: More smooth but less data
+    # HIGHER NUMBER: More data but can be more choppy and take longer to run
     num_ms  = 150
+
+    #Generate the network
     network = generate_network(num_ms)
 
     while True:

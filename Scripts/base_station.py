@@ -8,15 +8,17 @@ import random
 import math
 
 #Fuzzy scoring thresholds
+# - Works by categorizing the metric into low or high otherwise it is somewhere in between
 RSS_THRESHOLDS  = {"low": -40, "high": -10}   # dBm
 SNR_THRESHOLDS  = {"low": 63,  "high": 68}    # dB
 LOAD_THRESHOLDS = {"low": 20, "high": 80}    # %
  
 #FFDS weights 
+#These thresholds and weights can be adjusted if needed
 FFDS_WEIGHTS    = {"rss": 0.40, "snr": 0.40, "load": 0.20}
 
-
-#Load limit that base stations will use to determine what percentage of the capacity they are at
+#Load limit that base stations will use to determine what percentage of the Capacity they are at
+#Tends to be a factor of 10 less than the number of MSs so if there are 150 then it would need to be set to either 15-14
 REFERENCE_LOAD = 15
 
 #Returns a fuzzy score (0.0 to 1.0) for a given metric value based on defined thresholds
@@ -52,7 +54,7 @@ class BaseStation:
         self.congestion = congestion
         self.coverage_radius = coverage_radius
         
-        #minimum guaranteed level of noise that exists for each BS
+        #Minimum guaranteed level of noise that exists for each BS
         self.noise_floor  = -100
 
         #List of mobile stations currently connected to this base station
@@ -98,6 +100,7 @@ class BaseStation:
             distance = 0.1
         
         #Free space path loss equation
+        # - Uses a path loss exponent of 2 for free space
         path_loss = 10 * 2.0 * math.log10(distance)
         noise = random.gauss(0, self.noise)
         congestion_penalty = len(self.active_calls) * self.congestion
@@ -107,6 +110,7 @@ class BaseStation:
         return rss
     
     #Returns the cached RSS for the ms on that base station
+    # Cached RSS is used to avoid recalculating the RSS every time we want to calculate the SNR or FFDS
     def get_cached_rss(self, ms):
         return ms.rss_cache.get(self.id, float('-inf'))
     
@@ -119,8 +123,8 @@ class BaseStation:
         effective_noise_floor = self.noise_floor + (self.get_load() * 0.285)
         return cached_rss - effective_noise_floor
     
-    #Calculate the Full Fuzzy Decision Score for this BS
-    #Returns a value in [0, 1]. higher is better 
+    #Set Full Fuzzy Decision Score for this BS
+    #Returns a list of scores 
     #Load score is inverted since for that lower is better
     def calculate_ffds(self, ms):
         rss  = self.get_cached_rss(ms)

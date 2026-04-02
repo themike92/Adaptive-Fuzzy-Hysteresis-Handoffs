@@ -8,6 +8,8 @@
 #Use a seed to keep everything deterministic across runs
 import random
 
+#Different constant seeds
+#Makes sure that there is consistency during a simulation to accurately see the difference in algorithms
 RANDOM_SEED = 12345
 #RANDOM_SEED = 42
 #RANDOM_SEED = 456
@@ -27,10 +29,13 @@ H_MAX   = 12            # maximum margin so it never gets too large
 K       = 0.1           # sensitivity constant, controls how much speed affects the margin
 
 # Drop threshold, in dBm
+# - Tailored specifically to the simulation parameters
 RSS_DROP_THRESHOLD = -32
 SNR_DROP_THRESHOLD = 44
 
 # Simulation defaults
+# - SHORTER DURATION: Takes less time to run for options (2,3,4) but less events will happen
+# - LONGER DURATION: More events and data but takes more time to run for options (2,3,4)
 SIM_DURATION = 200
 SIM_INTERVAL = 50
 
@@ -39,10 +44,10 @@ def ms_process(env, ms, network, algorithm, results):
     while True:
         ms.move()
         
-        # Refresh RSS cache once per time step so all comparisons use consistent values
+        #Refresh RSS cache once per time step so all comparisons use consistent values
         ms.rss_cache = {bs.id: bs.calculate_rss(ms) for bs in network.base_stations}
         
-        #determine handoff algorithm to run
+        #Determine handoff algorithm to run
         if ms.connected_bs is not None:
             if algorithm == "baseline":
                 target = baseline_handoff_decision(ms, network)
@@ -53,6 +58,7 @@ def ms_process(env, ms, network, algorithm, results):
             elif algorithm == "fuzzy":
                 target = fuzzy_handoff_decision(ms, network)
             
+            #If true then perform the handoff to the target BS
             if target:
                 perform_handoff(ms, target, env.now, results)
             
@@ -83,6 +89,7 @@ def baseline_handoff_decision(ms, network):
         return None
     
     current_rss = ms.connected_bs.get_cached_rss(ms)
+    #Gets the neighboring BSs of the current BS
     neighboring_bss = network.get_neighbor_stations(ms.connected_bs,ms)
     
     #Find the best BS in the list of neighbors
@@ -102,13 +109,12 @@ def baseline_handoff_decision(ms, network):
 #ALGORITHM 2, ADAPTIVE HYSTERESIS
 #Calculate the adaptive margin based on the MSs speed
 #Decide whether or not the handoff decision should be made based on the adaptive margin and the RSS  
-
 def calculate_adaptive_H_Value(ms):
     
-    #proposed formula: H = H_DEF - K * speed
+    #Proposed formula: H = H_DEF - K * speed
     value = H_DEF - K * ms.speed
     
-    #keep the value bounded
+    #Keep the value bounded
     if value < H_MIN:
         value = H_MIN
     elif value > H_MAX:
@@ -117,7 +123,6 @@ def calculate_adaptive_H_Value(ms):
     return value
 
 def adaptive_hysteresis_handoff_decision(ms, network):
-    
     if ms.connected_bs is None:
         # If not currently connected, try to connect to the strongest BS
         best_bs = network.find_strongest_bs(ms)
@@ -126,6 +131,7 @@ def adaptive_hysteresis_handoff_decision(ms, network):
             ms.connected_bs = best_bs 
         return None
     
+    #Find the margins
     adaptive_H_margin = calculate_adaptive_H_Value(ms)
     
     current_rss = ms.connected_bs.get_cached_rss(ms) 
@@ -149,9 +155,8 @@ def adaptive_hysteresis_handoff_decision(ms, network):
 #ALGORITHM 3, FUZZY QoS + ADAPTIVE HYSTERESIS
 #Also calculate the adaptive hysteresis margin, and use it like in the last algorithm
 #Calculate the FFDS for each neighboring BS, select the one with the highest score
-
 def fuzzy_handoff_decision(ms, network):
-    
+    #Make sure that it is connected to a BS
     if ms.connected_bs is None:
         best_bs = network.find_strongest_bs(ms)
         if best_bs and best_bs.calculate_rss(ms) > RSS_DROP_THRESHOLD:
@@ -159,12 +164,13 @@ def fuzzy_handoff_decision(ms, network):
             ms.connected_bs = best_bs
         return None
     
+    #Since it builds off of adaptive we find its margins
     adaptive_H_margin = calculate_adaptive_H_Value(ms)
     current_rss       = ms.connected_bs.get_cached_rss(ms)
     neighboring_bss   = network.get_neighbor_stations(ms.connected_bs, ms)
 
-    #find candidate BSs that beat the adaptive margin
-    #this is the same method as adaptive hysteresis
+    #Find candidate BSs that beat the adaptive margin
+    #This is the same method as adaptive hysteresis
     candidates = []
     for bs in neighboring_bss:
         rss = bs.get_cached_rss(ms)
@@ -174,11 +180,12 @@ def fuzzy_handoff_decision(ms, network):
     if not candidates:
         return None
 
-    # Among candidates, pick the one with the highest FFDS score
-    # this is where fuzzy adds quality awareness over pure RSS
+    #Among candidates, pick the one with the highest FFDS score
+    #this is where fuzzy adds quality awareness over pure RSS
     best_targetBS  = None
     best_ffds      = -1
 
+    #Calculate each FFDS score and select the highest scoring one
     for bs in candidates:
         ffds = bs.calculate_ffds(ms)
         if ffds > best_ffds:
@@ -189,7 +196,7 @@ def fuzzy_handoff_decision(ms, network):
 
 
 #HELPER FUNCTION: PERFORM HANDOFF
-#disconnect from current BS, then connect to the new target BS
+#Disconnect from current BS, then connect to the new target BS
 #update MS metrics as needed (handoff count, flash timers, etc)
 def perform_handoff(ms, target_bs, time, results):
     old_BS = ms.connected_bs
@@ -199,6 +206,8 @@ def perform_handoff(ms, target_bs, time, results):
     
     if target_bs.add_call(ms):
         ms.connected_bs = target_bs
+
+        #Adds the flash to the visualization
         ms.handoff_count += 1
         ms.handoff_flash = 2
 
@@ -213,8 +222,8 @@ def perform_handoff(ms, target_bs, time, results):
     
     
 #HELPER FUNCTION: CHECK FOR CALL DROP
-#checks to see if the MSs current RSS has fallen below the drop threshold
-# if so, mark the call as dropped and disconnect
+#Checks to see if the MSs current RSS has fallen below the drop threshold
+#if so, mark the call as dropped and disconnect
 def check_call_drop(ms, curr_time, results):
     
     if ms.connected_bs is None:
@@ -240,6 +249,7 @@ def check_call_drop(ms, curr_time, results):
         ms.drop_flash = 2
         ms._drop_flash_set = True
         
+        #Adds a reason for the results section to diferentiate
         if rss_drop:
             reason = "rss"
         elif snr_drop:
@@ -263,11 +273,11 @@ def generate_network(num_ms):
     
     #set the key attributes for each MS
     for ms in network.mobile_stations:
-        ms.initial_x         = ms.x
-        ms.initial_y         = ms.y
-        ms.initial_speed     = ms.speed
+        ms.initial_x = ms.x
+        ms.initial_y = ms.y
+        ms.initial_speed = ms.speed
         ms.initial_direction = ms.direction
-        ms.initial_steps     = ms._steps_since_direction_change
+        ms.initial_steps = ms._steps_since_direction_change
         
     return network
 
@@ -284,34 +294,37 @@ def reset_network(network):
         ms.move_rng = random.Random(ms.id)
 
         # restore full movement state to initial snapshot
-        ms.x         = ms.initial_x
-        ms.y         = ms.initial_y
-        ms.speed     = ms.initial_speed
+        ms.x = ms.initial_x
+        ms.y = ms.initial_y
+        ms.speed = ms.initial_speed
         ms.direction = ms.initial_direction
         ms._steps_since_direction_change = ms.initial_steps
 
-        ms.connected_bs  = None
-        ms.call_dropped  = False
-        ms.drop_count    = 0
+        ms.connected_bs = None
+        ms.call_dropped = False
+        ms.drop_count = 0
         ms.handoff_count = 0
         ms.handoff_flash = 0
-        ms.drop_flash    = 0
-        ms.prev_x        = ms.x
-        ms.prev_y        = ms.y
-        ms.next_x        = ms.x
-        ms.next_y        = ms.y
-        ms.rss_cache     = {}
+        ms.drop_flash = 0
+        ms.prev_x = ms.x
+        ms.prev_y = ms.y
+        ms.next_x = ms.x
+        ms.next_y = ms.y
+        ms.rss_cache = {}
 
 
 # Build the Simpy environment, initialize the network state, and set up the MS processes and load logging
 def _build_env(network, algorithm, results):
     env = simpy.Environment()
     network.initial_connections()
+
+    #Summary of network before the start
     network.print_summary()
     
     for ms in network.mobile_stations:
         env.process(ms_process(env, ms, network, algorithm, results))
     
+    #Set up a process to log the load on each BS at regular intervals for the results summary
     def load_logger(env):
         while True:
             for bs in network.base_stations:
@@ -322,7 +335,7 @@ def _build_env(network, algorithm, results):
     env.process(load_logger(env))
     return env
 
-#Optionn 1 on the menu: run all simulations for all algorithms, print results in terminal
+#Option 1 on the menu: run all simulations for all algorithms, print results in terminal
 # No Matplotlib visualization, just the raw results summary in the terminal + result graph generation
 def run_all_simulations(network):
     algorithms = ["baseline", "adaptive", "fuzzy"]
@@ -333,7 +346,7 @@ def run_all_simulations(network):
         reset_network(network)
         
         results = Results(algorithm)
-        env     = _build_env(network, algorithm, results)
+        env = _build_env(network, algorithm, results)
         
         env.run(until=SIM_DURATION)
         
@@ -349,9 +362,10 @@ def run_visual_simulation(algorithm, network):
     results = Results(algorithm)
     env     = _build_env(network, algorithm, results)
     
-    
+    #Set the visuals up
     viz = Visualizer(network, cell_radius=80, signal_radius=170)
     
+    #Real time updates to make the visuals smoother
     def sim_step():
         next_time = env.now + 1
         while env.peek() <= next_time and env.peek() < float('inf'):
@@ -359,7 +373,7 @@ def run_visual_simulation(algorithm, network):
     
     viz.start(sim_step, SIM_INTERVAL, SIM_DURATION)
 
-    # window closed, print summary
+    #Window closed, print summary
     print(f"\nSimulation complete.")
     print(f"  Algorithm : {algorithm}")
     print(f"  Duration  : {SIM_DURATION} time steps")
