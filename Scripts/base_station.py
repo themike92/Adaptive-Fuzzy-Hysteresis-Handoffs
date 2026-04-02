@@ -3,7 +3,7 @@
 #Adam Tremblay - 101264116
 #Michael Roy - 101260953
 
-#This will be the code for our base stations
+
 import random
 import math
 
@@ -14,9 +14,9 @@ LOAD_THRESHOLDS = {"low": 20, "high": 80}    # %
  
 #FFDS weights 
 FFDS_WEIGHTS    = {"rss": 0.40, "snr": 0.40, "load": 0.20}
-#These thresholds and weights can be adjusted if needed
 
-#Load limit that base stations will use to determine what percentage of the cpacity they are at
+
+#Load limit that base stations will use to determine what percentage of the capacity they are at
 REFERENCE_LOAD = 15
 
 #Returns a fuzzy score (0.0 to 1.0) for a given metric value based on defined thresholds
